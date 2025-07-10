@@ -17,7 +17,9 @@ import {
   RiSunLine,
   RiSettings3Line,
   RiLogoutBoxLine,
-  RiUser3Line
+  RiUser3Line,
+  RiArrowLeftSLine,
+  RiArrowRightSLine
 } from 'react-icons/ri';
 
 interface MenuItem {
@@ -34,6 +36,7 @@ interface MenuItem {
 export default function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['Blog', 'Changelog']);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -52,6 +55,21 @@ export default function Sidebar() {
       document.documentElement.classList.add('dark');
     }
   }, []);
+
+  // Initialize collapsed state from localStorage
+  useEffect(() => {
+    const savedCollapsed = localStorage.getItem('sidebarCollapsed');
+    if (savedCollapsed === 'true') {
+      setIsCollapsed(true);
+    }
+  }, []);
+
+  // Update parent layout when collapsed state changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sidebar-collapsed', { detail: isCollapsed }));
+    }
+  }, [isCollapsed]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -79,6 +97,12 @@ export default function Sidebar() {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
+  };
+
+  const toggleCollapsed = () => {
+    const newCollapsed = !isCollapsed;
+    setIsCollapsed(newCollapsed);
+    localStorage.setItem('sidebarCollapsed', newCollapsed.toString());
   };
 
   const menuItems: MenuItem[] = [
@@ -109,11 +133,13 @@ export default function Sidebar() {
   ];
 
   const toggleMenu = (label: string) => {
-    setExpandedMenus(prev =>
-      prev.includes(label)
-        ? prev.filter(item => item !== label)
-        : [...prev, label]
-    );
+    if (!isCollapsed) {
+      setExpandedMenus(prev =>
+        prev.includes(label)
+          ? prev.filter(item => item !== label)
+          : [...prev, label]
+      );
+    }
   };
 
   const isActive = (href: string) => pathname === href;
@@ -134,24 +160,33 @@ export default function Sidebar() {
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed top-0 left-0 h-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 z-50 transition-transform duration-300 flex flex-col',
+          'fixed top-0 left-0 h-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 z-50 transition-all duration-300 flex flex-col',
           isOpen ? 'translate-x-0' : '-translate-x-full',
-          'w-64'
+          isCollapsed ? 'lg:w-16' : 'lg:w-64',
+          'w-64' // Always full width on mobile
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
+        <div className={clsx(
+          "flex items-center border-b border-gray-200 dark:border-slate-700",
+          isCollapsed ? "justify-center p-4" : "justify-between p-6"
+        )}>
           <Link href="/admin" className="flex items-center space-x-2">
             <span className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-fuchsia-600 text-transparent bg-clip-text">
               ✳
             </span>
-            <span className="text-xl font-bold text-slate-900 dark:text-white">
-              HEYAGENT
-            </span>
+            {!isCollapsed && (
+              <span className="text-xl font-bold text-slate-900 dark:text-white">
+                HEYAGENT
+              </span>
+            )}
           </Link>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-800"
+            className={clsx(
+              "lg:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-800",
+              isCollapsed && "hidden"
+            )}
           >
             <RiCloseLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
@@ -166,43 +201,63 @@ export default function Sidebar() {
                   <Link
                     href={item.href}
                     className={clsx(
-                      'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+                      'flex items-center gap-3 rounded-lg transition-colors group relative',
+                      isCollapsed ? 'px-3 py-3' : 'px-4 py-3',
                       isActive(item.href)
                         ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
                         : 'text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'
                     )}
+                    title={isCollapsed ? item.label : undefined}
                   >
-                    {item.icon}
-                    <span className="font-medium">{item.label}</span>
+                    <span className={isCollapsed ? 'mx-auto' : ''}>{item.icon}</span>
+                    {!isCollapsed && <span className="font-medium">{item.label}</span>}
+                    
+                    {/* Tooltip for collapsed state */}
+                    {isCollapsed && (
+                      <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 dark:bg-slate-700 text-white text-sm rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                        {item.label}
+                      </div>
+                    )}
                   </Link>
                 ) : (
                   <>
                     <button
                       onClick={() => toggleMenu(item.label)}
                       className={clsx(
-                        'flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors',
+                        'flex items-center w-full rounded-lg transition-colors group relative',
+                        isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3 justify-between',
                         isParentActive(item.submenu)
                           ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'
                           : 'text-slate-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'
                       )}
+                      title={isCollapsed ? item.label : undefined}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className={clsx("flex items-center gap-3", isCollapsed && "mx-auto")}>
                         {item.icon}
-                        <span className="font-medium">{item.label}</span>
+                        {!isCollapsed && <span className="font-medium">{item.label}</span>}
                       </div>
-                      <svg
-                        className={clsx(
-                          'w-4 h-4 transition-transform',
-                          expandedMenus.includes(item.label) ? 'rotate-90' : ''
-                        )}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+                      {!isCollapsed && (
+                        <svg
+                          className={clsx(
+                            'w-4 h-4 transition-transform',
+                            expandedMenus.includes(item.label) ? 'rotate-90' : ''
+                          )}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
+                      
+                      {/* Tooltip for collapsed state */}
+                      {isCollapsed && (
+                        <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 dark:bg-slate-700 text-white text-sm rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                          {item.label}
+                        </div>
+                      )}
                     </button>
-                    {expandedMenus.includes(item.label) && item.submenu && (
+                    {!isCollapsed && expandedMenus.includes(item.label) && item.submenu && (
                       <ul className="mt-1 ml-4 space-y-1">
                         {item.submenu.map((subitem) => (
                           <li key={subitem.href}>
@@ -235,29 +290,39 @@ export default function Sidebar() {
           <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                className={clsx(
+                  "flex items-center gap-2 w-full rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors",
+                  isCollapsed ? "p-2 justify-center" : "p-2"
+                )}
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-fuchsia-600 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-fuchsia-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <RiUserLine className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate flex-1">
-                  Admin User
-                </span>
-                <svg
-                  className={clsx(
-                    'w-4 h-4 text-slate-400 transition-transform ml-auto',
-                    showUserMenu ? 'rotate-180' : ''
-                  )}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                {!isCollapsed && (
+                  <>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate flex-1">
+                      Admin User
+                    </span>
+                    <svg
+                      className={clsx(
+                        'w-4 h-4 text-slate-400 transition-transform ml-auto',
+                        showUserMenu ? 'rotate-180' : ''
+                      )}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </>
+                )}
               </button>
               
               {showUserMenu && (
-                <div className="absolute bottom-full mb-2 left-0 right-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg">
+                <div className={clsx(
+                  "absolute bottom-full mb-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg",
+                  isCollapsed ? "left-full ml-2 w-48" : "left-0 right-0"
+                )}>
                   <div className="p-2">
                     <Link
                       href="/admin/profile"
@@ -286,7 +351,10 @@ export default function Sidebar() {
           </div>
           
           {/* Icons Row - Dark Mode & Notifications */}
-          <div className="flex items-center gap-2">
+          <div className={clsx(
+            "flex items-center gap-2",
+            isCollapsed ? "justify-center" : ""
+          )}>
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleDarkMode}
@@ -305,13 +373,17 @@ export default function Sidebar() {
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                title="Notifications"
               >
                 <RiNotificationLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
               </button>
               
               {showNotifications && (
-                <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg">
+                <div className={clsx(
+                  "absolute bottom-full mb-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg",
+                  isCollapsed ? "left-full ml-2" : "left-0"
+                )}>
                   <div className="p-4 border-b border-gray-200 dark:border-slate-700">
                     <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
                   </div>
@@ -328,6 +400,19 @@ export default function Sidebar() {
                 </div>
               )}
             </div>
+
+            {/* Collapse Toggle - Only visible on desktop */}
+            <button
+              onClick={toggleCollapsed}
+              className="hidden lg:block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {isCollapsed ? (
+                <RiArrowRightSLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              ) : (
+                <RiArrowLeftSLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              )}
+            </button>
           </div>
         </div>
       </aside>
