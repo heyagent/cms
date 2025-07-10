@@ -256,7 +256,7 @@ export default function Sidebar() {
               </button>
               
               {showNotifications && (
-                <div className="absolute bottom-full mb-2 right-0 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg">
+                <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg">
                   <div className="p-4 border-b border-gray-200 dark:border-slate-700">
                     <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
                   </div>
