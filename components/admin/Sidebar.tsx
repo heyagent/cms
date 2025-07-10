@@ -230,52 +230,9 @@ export default function Sidebar() {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-gray-200 dark:border-slate-700 p-4">
-          <div className="flex items-center justify-between gap-2">
-            {/* Dark Mode Toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-              title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDarkMode ? (
-                <RiSunLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-              ) : (
-                <RiMoonLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-              )}
-            </button>
-
-            {/* Notifications */}
-            <div className="relative" ref={notificationRef}>
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <RiNotificationLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
-              </button>
-              
-              {showNotifications && (
-                <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg">
-                  <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-                    <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
-                      No new notifications
-                    </p>
-                  </div>
-                  <div className="p-2 border-t border-gray-200 dark:border-slate-700">
-                    <button className="w-full text-sm text-amber-600 dark:text-amber-400 hover:bg-gray-50 dark:hover:bg-slate-700 p-2 rounded transition-colors">
-                      Mark all as read
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* User Menu */}
-            <div className="relative flex-1" ref={userMenuRef}>
+        <div className="border-t border-gray-200 dark:border-slate-700 p-4 space-y-3">
+          {/* User Menu - Full Width */}
+          <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
@@ -283,7 +240,7 @@ export default function Sidebar() {
                 <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-fuchsia-600 rounded-full flex items-center justify-center">
                   <RiUserLine className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate flex-1">
                   Admin User
                 </span>
                 <svg
@@ -322,6 +279,50 @@ export default function Sidebar() {
                     >
                       <RiLogoutBoxLine className="w-4 h-4" />
                       Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+          </div>
+          
+          {/* Icons Row - Dark Mode & Notifications */}
+          <div className="flex items-center gap-2">
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDarkMode ? (
+                <RiSunLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              ) : (
+                <RiMoonLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              )}
+            </button>
+
+            {/* Notifications */}
+            <div className="relative" ref={notificationRef}>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <RiNotificationLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
+              </button>
+              
+              {showNotifications && (
+                <div className="absolute bottom-full mb-2 left-0 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg">
+                  <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
+                      No new notifications
+                    </p>
+                  </div>
+                  <div className="p-2 border-t border-gray-200 dark:border-slate-700">
+                    <button className="w-full text-sm text-amber-600 dark:text-amber-400 hover:bg-gray-50 dark:hover:bg-slate-700 p-2 rounded transition-colors">
+                      Mark all as read
                     </button>
                   </div>
                 </div>
