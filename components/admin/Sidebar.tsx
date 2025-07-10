@@ -162,7 +162,7 @@ export default function Sidebar() {
         className={clsx(
           'fixed top-0 left-0 h-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 z-50 transition-all duration-300 flex flex-col',
           isOpen ? 'translate-x-0' : '-translate-x-full',
-          isCollapsed ? 'lg:w-16' : 'lg:w-64',
+          isCollapsed ? 'lg:w-20' : 'lg:w-64',
           'w-64' // Always full width on mobile
         )}
       >
@@ -193,7 +193,10 @@ export default function Sidebar() {
         </div>
 
         {/* Menu - scrollable area */}
-        <div className="flex-1 p-4 overflow-y-auto sidebar-scroll">
+        <div className={clsx(
+          "flex-1 overflow-y-auto overflow-x-hidden sidebar-scroll",
+          isCollapsed ? "p-2" : "p-4"
+        )}>
           <ul className="space-y-1">
             {menuItems.map((item) => (
               <li key={item.label}>
@@ -285,27 +288,32 @@ export default function Sidebar() {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-gray-200 dark:border-slate-700 p-4 space-y-3">
+        <div className={clsx(
+          "border-t border-gray-200 dark:border-slate-700 space-y-2",
+          isCollapsed ? "p-2" : "p-4"
+        )}>
           {/* User Menu - Full Width */}
           <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className={clsx(
-                  "flex items-center gap-2 w-full rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors",
-                  isCollapsed ? "p-2 justify-center" : "p-2"
+                  "flex items-center gap-3 w-full rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors group relative",
+                  isCollapsed ? "p-2 justify-center" : "p-3"
                 )}
+                title={isCollapsed ? "Admin User" : undefined}
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-fuchsia-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <RiUserLine className="w-4 h-4 text-white" />
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-fuchsia-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <RiUserLine className="w-5 h-5 text-white" />
                 </div>
                 {!isCollapsed && (
                   <>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate flex-1">
-                      Admin User
-                    </span>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">Admin User</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">admin@heyagent.com</p>
+                    </div>
                     <svg
                       className={clsx(
-                        'w-4 h-4 text-slate-400 transition-transform ml-auto',
+                        'w-4 h-4 text-slate-400 transition-transform',
                         showUserMenu ? 'rotate-180' : ''
                       )}
                       fill="none"
@@ -315,6 +323,13 @@ export default function Sidebar() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </>
+                )}
+                
+                {/* Tooltip for collapsed state */}
+                {isCollapsed && (
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 dark:bg-slate-700 text-white text-sm rounded opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                    Admin User
+                  </div>
                 )}
               </button>
               
@@ -350,15 +365,17 @@ export default function Sidebar() {
               )}
           </div>
           
-          {/* Icons Row - Dark Mode & Notifications */}
+          {/* Icons Row - Evenly distributed */}
           <div className={clsx(
-            "flex items-center gap-2",
-            isCollapsed ? "justify-center" : ""
+            isCollapsed ? "flex flex-col gap-1" : "grid grid-cols-3 gap-1"
           )}>
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleDarkMode}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              className={clsx(
+                "rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center",
+                isCollapsed ? "p-2 w-full" : "p-3 w-full"
+              )}
               title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {isDarkMode ? (
@@ -372,11 +389,16 @@ export default function Sidebar() {
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                className={clsx(
+                  "rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center",
+                  isCollapsed ? "p-2 w-full" : "p-3 w-full"
+                )}
                 title="Notifications"
               >
-                <RiNotificationLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
+                <div className="relative">
+                  <RiNotificationLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
+                </div>
               </button>
               
               {showNotifications && (
@@ -404,7 +426,10 @@ export default function Sidebar() {
             {/* Collapse Toggle - Only visible on desktop */}
             <button
               onClick={toggleCollapsed}
-              className="hidden lg:block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              className={clsx(
+                "hidden lg:flex rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors items-center justify-center",
+                isCollapsed ? "p-2 w-full" : "p-3 w-full"
+              )}
               title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {isCollapsed ? (
