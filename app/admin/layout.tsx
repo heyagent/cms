@@ -41,7 +41,7 @@ export default function AdminLayout({
       
       {/* Main content */}
       <div className={clsx(
-        "transition-all duration-300 pt-14 md:pt-16",
+        "transition-all duration-300 pt-14 md:pt-0",
         isCollapsed ? "md:ml-20" : "md:ml-56 lg:ml-64"
       )}>
         <main className="min-h-screen p-4 md:p-6 lg:p-8">

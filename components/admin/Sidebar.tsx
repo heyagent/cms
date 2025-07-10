@@ -133,7 +133,6 @@ export default function Sidebar({ isOpen: isOpenProp, onClose }: SidebarProps) {
       submenu: [
         { label: 'All Entries', href: '/admin/changelog', icon: <RiCircleFill className="w-2 h-2 text-amber-400" /> },
         { label: 'Create New', href: '/admin/changelog/new', icon: <RiCircleFill className="w-2 h-2 text-amber-400" /> },
-        { label: 'Version History', href: '/admin/changelog/versions', icon: <RiCircleFill className="w-2 h-2 text-amber-400" /> },
       ],
     },
   ];
@@ -176,7 +175,7 @@ export default function Sidebar({ isOpen: isOpenProp, onClose }: SidebarProps) {
           // Mobile: slide in/out
           isOpen ? 'translate-x-0' : '-translate-x-full',
           // Desktop & Tablet: fixed position with collapse
-          'lg:translate-x-0',
+          'md:translate-x-0',
           // Width based on screen size and collapse state
           isCollapsed ? 'md:w-20' : 'md:w-56 lg:w-64',
           'w-64' // Full width on mobile
@@ -185,9 +184,9 @@ export default function Sidebar({ isOpen: isOpenProp, onClose }: SidebarProps) {
         {/* Header */}
         <div className={clsx(
           "flex items-center border-b border-gray-200 dark:border-slate-700",
-          "md:flex", // Only show on tablet and desktop
           isCollapsed ? "justify-center p-4" : "justify-between p-4 md:p-6"
         )}>
+          {/* Logo - shown on desktop/tablet */}
           <Link href="/admin" className="hidden md:flex items-center space-x-2">
             <span className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-fuchsia-600 text-transparent bg-clip-text">
               ✳
@@ -199,8 +198,8 @@ export default function Sidebar({ isOpen: isOpenProp, onClose }: SidebarProps) {
             )}
           </Link>
           
-          {/* Mobile close button - positioned differently */}
-          <div className="md:hidden flex justify-end w-full p-4">
+          {/* Mobile close button */}
+          <div className="md:hidden flex justify-end w-full">
             <button
               onClick={() => {
                 if (onClose) {

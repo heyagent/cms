@@ -1,4 +1,35 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { changelogAPI } from '@/lib/api';
+
 export default function AdminDashboard() {
+  const [stats, setStats] = useState({
+    changelog: 0,
+    blog: 0,
+    categories: 0,
+    tags: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const changelogStats = await changelogAPI.getStats();
+      setStats(prev => ({
+        ...prev,
+        changelog: changelogStats.data.total,
+      }));
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div>
       {/* Page Header */}
@@ -22,7 +53,9 @@ export default function AdminDashboard() {
               </svg>
             </div>
           </div>
-          <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">0</h3>
+          <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
+            {loading ? '...' : stats.blog}
+          </h3>
           <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-0.5 md:mt-1">Total Blog Posts</p>
         </div>
 
@@ -35,7 +68,9 @@ export default function AdminDashboard() {
               </svg>
             </div>
           </div>
-          <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">0</h3>
+          <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
+            {loading ? '...' : stats.changelog}
+          </h3>
           <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-0.5 md:mt-1">Changelog Entries</p>
         </div>
 
@@ -48,7 +83,9 @@ export default function AdminDashboard() {
               </svg>
             </div>
           </div>
-          <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">0</h3>
+          <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
+            {loading ? '...' : stats.categories}
+          </h3>
           <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-0.5 md:mt-1">Categories</p>
         </div>
 
@@ -61,7 +98,9 @@ export default function AdminDashboard() {
               </svg>
             </div>
           </div>
-          <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">0</h3>
+          <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
+            {loading ? '...' : stats.tags}
+          </h3>
           <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-0.5 md:mt-1">Tags</p>
         </div>
       </div>

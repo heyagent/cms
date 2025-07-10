@@ -11,8 +11,8 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick, isCollapsed }: HeaderProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 md:h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 z-40">
-      <div className="h-full flex items-center justify-between px-4 md:px-6">
+    <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 z-40">
+      <div className="h-full flex items-center justify-between px-4">
         {/* Left side - Logo and Menu button */}
         <div className="flex items-center gap-3">
           {/* Mobile menu button */}
