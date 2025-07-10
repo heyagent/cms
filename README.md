@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HeyAgent CMS
 
-## Getting Started
+Admin interface for managing HeyAgent content including changelog and blog posts.
 
-First, run the development server:
+## Overview
+
+This is a Next.js application that serves as the content management system for HeyAgent. It consumes the HeyAgent API to provide a user-friendly interface for managing:
+
+- Changelog entries
+- Blog posts
+- Categories and tags
+- Authors
+
+## Tech Stack
+
+- **Framework**: Next.js 15.3.5 with App Router
+- **Styling**: Tailwind CSS v4
+- **Deployment**: Cloudflare Workers via @opennextjs/cloudflare
+- **API**: Consumes HeyAgent API at localhost:8787
+
+## Development
+
+### Prerequisites
+
+- Node.js 18+
+- npm or pnpm
+- Access to HeyAgent API
+
+### Local Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Start development server (port 3001)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# The CMS will be available at:
+# http://localhost:3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Using Root Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The CMS is integrated with HeyAgent's root development scripts:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# From the root directory (/home/tishmen/heyagent)
 
-## Learn More
+# Start all services (API, Website, CMS)
+./start.sh
 
-To learn more about Next.js, take a look at the following resources:
+# Check status of all services
+./status.sh
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# View logs from all services
+./logs.sh
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Stop all services
+./stop.sh
+```
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# Build and deploy to Cloudflare Workers
+npm run deploy
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure
+
+```
+cms/
+├── app/              # Next.js app directory
+│   ├── layout.tsx    # Root layout
+│   ├── page.tsx      # Home page
+│   └── globals.css   # Global styles
+├── components/       # React components
+├── lib/             # Utilities and API client
+├── public/          # Static assets
+└── types/           # TypeScript type definitions
+```
+
+## Environment Variables
+
+Create a `.dev.vars` file for local development:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8787
+```
+
+## Features (Planned)
+
+- [ ] Authentication system
+- [ ] Changelog CRUD operations
+- [ ] Blog post management
+- [ ] Rich text editor
+- [ ] Media uploads
+- [ ] Category/tag management
+- [ ] User management
+- [ ] Activity logs
+
+## Contributing
+
+1. Create a feature branch
+2. Make your changes
+3. Test locally with all services running
+4. Submit a pull request
+
+## License
+
+Private - HeyAgent proprietary software
