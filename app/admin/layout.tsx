@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/admin/Sidebar';
+import Header from '@/components/admin/Header';
 import clsx from 'clsx';
 
 export default function AdminLayout({
@@ -10,6 +11,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     // Listen for sidebar collapse events
@@ -24,14 +26,23 @@ export default function AdminLayout({
     };
   }, []);
 
+  const handleMenuClick = () => {
+    setIsSidebarOpen(true);
+  };
+
+  const handleSidebarClose = () => {
+    setIsSidebarOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
-      <Sidebar />
+      <Header onMenuClick={handleMenuClick} isCollapsed={isCollapsed} />
+      <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
       
       {/* Main content */}
       <div className={clsx(
-        "transition-all duration-300",
-        isCollapsed ? "lg:ml-16" : "lg:ml-64"
+        "transition-all duration-300 pt-14 md:pt-16",
+        isCollapsed ? "md:ml-20" : "md:ml-56 lg:ml-64"
       )}>
         <main className="min-h-screen p-4 md:p-6 lg:p-8">
           {children}

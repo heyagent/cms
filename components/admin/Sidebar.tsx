@@ -33,9 +33,15 @@ interface MenuItem {
   }[];
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen: isOpenProp, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpenState, setIsOpenState] = useState(true);
+  const isOpen = isOpenProp !== undefined ? isOpenProp : isOpenState;
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['Blog', 'Changelog']);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -152,8 +158,14 @@ export default function Sidebar() {
       {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => {
+            if (onClose) {
+              onClose();
+            } else {
+              setIsOpenState(false);
+            }
+          }}
         />
       )}
 
@@ -161,17 +173,22 @@ export default function Sidebar() {
       <aside
         className={clsx(
           'fixed top-0 left-0 h-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 z-50 transition-all duration-300 flex flex-col',
+          // Mobile: slide in/out
           isOpen ? 'translate-x-0' : '-translate-x-full',
-          isCollapsed ? 'lg:w-20' : 'lg:w-64',
-          'w-64' // Always full width on mobile
+          // Desktop & Tablet: fixed position with collapse
+          'lg:translate-x-0',
+          // Width based on screen size and collapse state
+          isCollapsed ? 'md:w-20' : 'md:w-56 lg:w-64',
+          'w-64' // Full width on mobile
         )}
       >
         {/* Header */}
         <div className={clsx(
           "flex items-center border-b border-gray-200 dark:border-slate-700",
-          isCollapsed ? "justify-center p-4" : "justify-between p-6"
+          "md:flex", // Only show on tablet and desktop
+          isCollapsed ? "justify-center p-4" : "justify-between p-4 md:p-6"
         )}>
-          <Link href="/admin" className="flex items-center space-x-2">
+          <Link href="/admin" className="hidden md:flex items-center space-x-2">
             <span className="text-3xl font-bold bg-gradient-to-r from-amber-400 to-fuchsia-600 text-transparent bg-clip-text">
               ✳
             </span>
@@ -181,15 +198,22 @@ export default function Sidebar() {
               </span>
             )}
           </Link>
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className={clsx(
-              "lg:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-800",
-              isCollapsed && "hidden"
-            )}
-          >
-            <RiCloseLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-          </button>
+          
+          {/* Mobile close button - positioned differently */}
+          <div className="md:hidden flex justify-end w-full p-4">
+            <button
+              onClick={() => {
+                if (onClose) {
+                  onClose();
+                } else {
+                  setIsOpenState(false);
+                }
+              }}
+              className="p-2 -mr-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-800"
+            >
+              <RiCloseLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            </button>
+          </div>
         </div>
 
         {/* Menu - scrollable area */}
@@ -290,7 +314,7 @@ export default function Sidebar() {
         {/* Bottom Section */}
         <div className={clsx(
           "border-t border-gray-200 dark:border-slate-700 space-y-2",
-          isCollapsed ? "p-2" : "p-4"
+          isCollapsed ? "p-2" : "p-3 md:p-4"
         )}>
           {/* User Menu - Full Width */}
           <div className="relative" ref={userMenuRef}>
@@ -423,11 +447,11 @@ export default function Sidebar() {
               )}
             </div>
 
-            {/* Collapse Toggle - Only visible on desktop */}
+            {/* Collapse Toggle - Visible on tablet and desktop */}
             <button
               onClick={toggleCollapsed}
               className={clsx(
-                "hidden lg:flex rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors items-center justify-center",
+                "hidden md:flex rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors items-center justify-center",
                 isCollapsed ? "p-2 w-full" : "p-3 w-full"
               )}
               title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -442,16 +466,6 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Mobile menu button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className={clsx(
-          'fixed top-4 left-4 p-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-md lg:hidden z-40',
-          isOpen && 'hidden'
-        )}
-      >
-        <RiMenuLine className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-      </button>
     </>
   );
 }
