@@ -19,6 +19,7 @@ import {
   User
 } from "lucide-react"
 import { useTheme } from "next-themes"
+import LogoCompact from "@/components/logo/LogoCompact"
 
 import {
   Sidebar,
@@ -289,13 +290,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/admin">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-fuchsia-600 text-white">
-                  <span className="text-xl font-bold">✳</span>
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">HeyAgent</span>
-                  <span className="truncate text-xs">Admin Panel</span>
-                </div>
+                <LogoCompact size="md" />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

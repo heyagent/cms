@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface LogoIconProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
@@ -6,12 +7,12 @@ interface LogoIconProps {
   className?: string;
 }
 
-const sizeClasses = {
-  xs: "text-base",    // 16px
-  sm: "text-2xl",     // 24px
-  md: "text-4xl",     // 36px
-  lg: "text-6xl",     // 60px
-  xl: "text-8xl",     // 96px
+const sizeMap = {
+  xs: 16,
+  sm: 24,
+  md: 36,
+  lg: 60,
+  xl: 96,
 };
 
 export default function LogoIcon({ 
@@ -19,31 +20,32 @@ export default function LogoIcon({
   variant = "gradient",
   className 
 }: LogoIconProps) {
-  const getColorClass = () => {
+  const getImageSrc = () => {
     switch (variant) {
       case "gradient":
-        return "bg-gradient-to-r from-amber-400 to-fuchsia-600 text-transparent bg-clip-text";
+        return "/logos/logo-icon-gradient.png";
       case "amber":
-        return "text-amber-400";
+        return "/logos/logo-icon-amber.png";
       case "white":
-        return "text-white";
+        return "/logos/logo-icon-white.png";
       case "black":
-        return "text-slate-900";
+        return "/logos/logo-icon-black.png";
       default:
-        return "";
+        return "/logos/logo-icon-gradient.png";
     }
   };
 
+  const dimension = sizeMap[size];
+
   return (
-    <span 
-      className={cn(
-        "font-bold inline-block",
-        sizeClasses[size],
-        getColorClass(),
-        className
-      )}
-    >
-      ✳
-    </span>
+    <div className={cn("relative inline-block", className)}>
+      <Image
+        src={getImageSrc()}
+        alt="HeyAgent Icon"
+        width={dimension}
+        height={dimension}
+        className="object-contain"
+      />
+    </div>
   );
 }

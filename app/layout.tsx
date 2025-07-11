@@ -13,6 +13,15 @@ const figtree = Figtree({
 export const metadata: Metadata = {
   title: "HeyAgent CMS",
   description: "Admin interface for managing HeyAgent content",
+  icons: {
+    icon: [
+      { url: "/logos/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/logos/favicon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/logos/favicon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({

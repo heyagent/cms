@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import LogoIcon from "./LogoIcon";
+import Image from "next/image";
 
 interface LogoCompactProps {
   showText?: boolean;
@@ -12,16 +12,23 @@ export default function LogoCompact({
   size = "md",
   className 
 }: LogoCompactProps) {
-  const iconSize = size === "sm" ? "sm" : "md";
+  const iconSize = size === "sm" ? 24 : 32;
+  const containerSize = size === "sm" ? "w-6 h-6" : "w-8 h-8";
   const textSize = size === "sm" ? "text-sm" : "text-base";
 
   return (
     <div className={cn("flex items-center", size === "sm" ? "space-x-1" : "space-x-2", className)}>
       <div className={cn(
-        "flex items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-fuchsia-600",
-        size === "sm" ? "w-6 h-6" : "w-8 h-8"
+        "flex items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-fuchsia-600 p-1",
+        containerSize
       )}>
-        <LogoIcon size={iconSize} variant="white" />
+        <Image
+          src="/logos/logo-icon-white.png"
+          alt="HeyAgent"
+          width={iconSize}
+          height={iconSize}
+          className="object-contain"
+        />
       </div>
       {showText && (
         <div className="grid flex-1 text-left leading-tight">

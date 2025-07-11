@@ -1,75 +1,59 @@
 import { cn } from "@/lib/utils";
-import LogoIcon from "./LogoIcon";
+import Image from "next/image";
 
 interface LogoFullProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   variant?: "light" | "dark" | "auto";
-  iconVariant?: "gradient" | "amber" | "white" | "black";
   className?: string;
 }
 
-const sizeClasses = {
-  xs: {
-    icon: "xs" as const,
-    text: "text-sm",
-    spacing: "space-x-1",
-  },
-  sm: {
-    icon: "sm" as const,
-    text: "text-xl",
-    spacing: "space-x-1",
-  },
-  md: {
-    icon: "md" as const,
-    text: "text-3xl",
-    spacing: "space-x-2",
-  },
-  lg: {
-    icon: "lg" as const,
-    text: "text-5xl",
-    spacing: "space-x-3",
-  },
-  xl: {
-    icon: "xl" as const,
-    text: "text-7xl",
-    spacing: "space-x-4",
-  },
+const sizeMap = {
+  xs: { width: 80, height: 20 },
+  sm: { width: 120, height: 30 },
+  md: { width: 150, height: 40 },
+  lg: { width: 200, height: 50 },
+  xl: { width: 250, height: 60 },
 };
 
 export default function LogoFull({ 
   size = "md", 
   variant = "auto",
-  iconVariant = "gradient",
   className 
 }: LogoFullProps) {
-  const getTextColorClass = () => {
-    switch (variant) {
-      case "light":
-        return "text-slate-900";
-      case "dark":
-        return "text-white";
-      case "auto":
-        return "text-slate-900 dark:text-white";
-      default:
-        return "";
-    }
-  };
+  const dimensions = sizeMap[size];
 
-  const config = sizeClasses[size];
+  if (variant === "auto") {
+    return (
+      <div className={cn("relative inline-block", className)}>
+        <Image
+          src="/logos/logo-full-light.png"
+          alt="HeyAgent"
+          width={dimensions.width}
+          height={dimensions.height}
+          className="object-contain dark:hidden"
+        />
+        <Image
+          src="/logos/logo-full-dark.png"
+          alt="HeyAgent"
+          width={dimensions.width}
+          height={dimensions.height}
+          className="object-contain hidden dark:block"
+        />
+      </div>
+    );
+  }
+
+  const imageSrc = variant === "dark" ? "/logos/logo-full-dark.png" : "/logos/logo-full-light.png";
 
   return (
-    <div className={cn("flex items-center", config.spacing, className)}>
-      <LogoIcon size={config.icon} variant={iconVariant} />
-      <span 
-        className={cn(
-          "font-bold tracking-tight",
-          config.text,
-          getTextColorClass()
-        )}
-        style={{ fontFamily: 'var(--font-figtree)' }}
-      >
-        HEYAGENT
-      </span>
+    <div className={cn("relative inline-block", className)}>
+      <Image
+        src={imageSrc}
+        alt="HeyAgent"
+        width={dimensions.width}
+        height={dimensions.height}
+        className="object-contain"
+      />
     </div>
   );
 }
