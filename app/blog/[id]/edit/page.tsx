@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { changelogAPI } from '@/lib/api';
-import ChangelogForm from '@/components/admin/ChangelogForm';
+import { blogAPI } from '@/lib/api';
+import BlogForm from '@/components/admin/BlogForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default function EditChangelogPage() {
+export default function EditBlogPage() {
   const router = useRouter();
   const params = useParams();
   const id = parseInt(params.id as string);
@@ -20,22 +21,22 @@ export default function EditChangelogPage() {
 
   useEffect(() => {
     if (!isNaN(id)) {
-      fetchEntry();
+      fetchPost();
     } else {
-      setError('Invalid changelog ID');
+      setError('Invalid blog post ID');
       setLoading(false);
     }
   }, [id]);
 
-  const fetchEntry = async () => {
+  const fetchPost = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await changelogAPI.getById(id);
+      const response = await blogAPI.getById(id);
       setData(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch entry');
+      setError(err instanceof Error ? err.message : 'Failed to fetch post');
     } finally {
       setLoading(false);
     }
@@ -46,10 +47,10 @@ export default function EditChangelogPage() {
       setSubmitting(true);
       setError(null);
       
-      await changelogAPI.update(id, formData);
-      router.push('/admin/changelog');
+      await blogAPI.update(id, formData);
+      router.push('/blog');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update entry');
+      setError(err instanceof Error ? err.message : 'Failed to update post');
       setSubmitting(false);
     }
   };
@@ -74,11 +75,11 @@ export default function EditChangelogPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-destructive/10 rounded-full mb-4">
             <AlertCircle className="w-8 h-8 text-destructive" />
           </div>
-          <h2 className="text-xl font-semibold mb-2">Error Loading Entry</h2>
+          <h2 className="text-xl font-semibold mb-2">Error Loading Post</h2>
           <p className="text-muted-foreground mb-4">{error}</p>
           <Button
             variant="secondary"
-            onClick={() => router.push('/admin/changelog')}
+            onClick={() => router.push('/blog')}
           >
             Back to List
           </Button>
@@ -90,11 +91,11 @@ export default function EditChangelogPage() {
   return (
     <div>
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold">
-          Edit Changelog Entry
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+          Edit Blog Post
         </h1>
-        <p className="mt-1 text-sm md:text-base text-muted-foreground">
-          Update the details for version {data?.version}
+        <p className="mt-1 text-sm md:text-base text-slate-600 dark:text-slate-400">
+          Update the blog post "{data?.title}"
         </p>
       </div>
 
@@ -105,7 +106,7 @@ export default function EditChangelogPage() {
         </Alert>
       )}
 
-      <ChangelogForm
+      <BlogForm
         initialData={data}
         onSubmit={handleSubmit}
         loading={submitting}

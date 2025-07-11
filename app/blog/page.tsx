@@ -4,19 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { blogAPI, type BlogPost } from '@/lib/api';
-import { Plus, Calendar, Loader2, X } from 'lucide-react';
+import { Plus, Calendar, Loader2, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable, createSortableHeader, createSelectColumn } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -77,10 +68,15 @@ export default function BlogListPage() {
       accessorKey: "title",
       header: createSortableHeader("Title"),
       cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span className="font-medium">{row.getValue("title")}</span>
-          <span className="text-xs text-muted-foreground">/{row.original.slug}</span>
-        </div>
+        <Link 
+          href={`/blog/${row.original.id}/edit`}
+          className="block hover:opacity-70 transition-opacity"
+        >
+          <div className="flex flex-col">
+            <span className="font-medium text-primary hover:underline">{row.getValue("title")}</span>
+            <span className="text-xs text-muted-foreground">/{row.original.slug}</span>
+          </div>
+        </Link>
       ),
     },
     {
@@ -91,7 +87,10 @@ export default function BlogListPage() {
     {
       accessorKey: "category.name",
       header: createSortableHeader("Category"),
-      cell: ({ row }) => row.original.category?.name || 'Uncategorized',
+      cell: ({ row }) => {
+        const categoryName = row.original.category?.name || 'Uncategorized';
+        return categoryName.replace(/_/g, ' ');
+      },
     },
     {
       accessorKey: "date",
@@ -133,37 +132,22 @@ export default function BlogListPage() {
     },
     {
       id: "actions",
+      header: "",
       enableHiding: false,
       cell: ({ row }) => {
         const post = row.original;
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => router.push(`/admin/blog/${post.id}/edit`)}
-                className="cursor-pointer"
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => handleDelete(post.id!)}
-                className="cursor-pointer text-destructive focus:text-destructive"
-              >
-                <Trash className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:text-destructive"
+            onClick={() => handleDelete(post.id!)}
+            title="Delete post"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="sr-only">Delete</span>
+          </Button>
         );
       },
     },
@@ -199,7 +183,7 @@ export default function BlogListPage() {
             <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm">
               <span>Filtered by tag: <strong>{tagFilter}</strong></span>
               <Link
-                href="/admin/blog"
+                href="/blog"
                 className="hover:opacity-80"
                 title="Clear filter"
               >
@@ -210,7 +194,7 @@ export default function BlogListPage() {
         </div>
         
         <Button asChild>
-          <Link href="/admin/blog/new">
+          <Link href="/blog/new">
             <Plus className="mr-2 h-4 w-4" />
             New Post
           </Link>

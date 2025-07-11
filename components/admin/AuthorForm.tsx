@@ -72,7 +72,7 @@ export default function AuthorForm({ initialData, onSubmit, loading = false }: A
     if (form.formState.isDirty && !confirm('You have unsaved changes. Are you sure you want to leave?')) {
       return;
     }
-    router.push('/admin/authors');
+    router.push('/authors');
   };
 
   // Get initials for avatar fallback

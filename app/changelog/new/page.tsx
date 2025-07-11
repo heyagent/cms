@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { categoriesAPI } from '@/lib/api';
-import CategoryForm from '@/components/admin/CategoryForm';
+import { changelogAPI } from '@/lib/api';
+import ChangelogForm from '@/components/admin/ChangelogForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
-export default function NewCategoryPage() {
+export default function NewChangelogPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,14 +17,10 @@ export default function NewCategoryPage() {
       setLoading(true);
       setError(null);
       
-      await categoriesAPI.create(data);
-      router.push('/admin/categories');
+      await changelogAPI.create(data);
+      router.push('/changelog');
     } catch (err) {
-      if (err instanceof Error && err.message.includes('already exists')) {
-        setError('A category with this slug already exists. Please choose a different slug.');
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to create category');
-      }
+      setError(err instanceof Error ? err.message : 'Failed to create entry');
       setLoading(false);
     }
   };
@@ -33,10 +29,10 @@ export default function NewCategoryPage() {
     <div>
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold">
-          Create Category
+          Create Changelog Entry
         </h1>
         <p className="mt-1 text-sm md:text-base text-muted-foreground">
-          Add a new blog post category
+          Add a new entry to the changelog
         </p>
       </div>
 
@@ -47,7 +43,7 @@ export default function NewCategoryPage() {
         </Alert>
       )}
 
-      <CategoryForm
+      <ChangelogForm
         onSubmit={handleSubmit}
         loading={loading}
       />

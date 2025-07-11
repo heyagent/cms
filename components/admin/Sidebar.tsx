@@ -11,12 +11,12 @@ import {
   Tags,
   FolderOpen,
   ChevronRight,
-  Settings,
-  HelpCircle,
   LogOut,
   Moon,
   Sun,
-  User
+  User,
+  Menu,
+  Settings
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import LogoFull from "@/components/logo/LogoFull"
@@ -39,7 +39,8 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
-  useSidebar
+  useSidebar,
+  SidebarSeparator
 } from "@/components/ui/sidebar"
 import {
   DropdownMenu,
@@ -58,62 +59,53 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/admin",
+      url: "/",
       icon: LayoutDashboard,
     },
     {
       title: "Blog",
+      url: "/blog",
       icon: FileText,
       items: [
         {
           title: "All Posts",
-          url: "/admin/blog",
+          url: "/blog",
         },
         {
           title: "Create New",
-          url: "/admin/blog/new",
+          url: "/blog/new",
         },
         {
           title: "Authors",
-          url: "/admin/authors",
+          url: "/authors",
         },
         {
           title: "Categories",
-          url: "/admin/categories",
+          url: "/categories",
         },
         {
           title: "Tags",
-          url: "/admin/tags",
+          url: "/tags",
         },
       ],
     },
     {
       title: "Changelog",
+      url: "/changelog",
       icon: History,
       items: [
         {
           title: "All Entries",
-          url: "/admin/changelog",
+          url: "/changelog",
         },
         {
           title: "Create New",
-          url: "/admin/changelog/new",
+          url: "/changelog/new",
         },
       ],
     },
   ],
-  navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: HelpCircle,
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings,
-    },
-  ],
+  navSecondary: [],
   user: {
     name: "Admin User",
     email: "admin@heyagent.com",
@@ -123,6 +115,8 @@ const data = {
 
 function NavMain() {
   const pathname = usePathname()
+  const { state } = useSidebar()
+  const isCollapsed = state === "collapsed"
   
   return (
     <SidebarGroup>
@@ -131,7 +125,7 @@ function NavMain() {
         <SidebarMenu>
           {data.navMain.map((item) => (
             <SidebarMenuItem key={item.title}>
-              {item.items ? (
+              {item.items && !isCollapsed ? (
                 <Collapsible
                   defaultOpen={item.items.some(subItem => pathname.startsWith(subItem.url))}
                   className="group/collapsible"
@@ -164,7 +158,7 @@ function NavMain() {
                 <SidebarMenuButton
                   asChild
                   tooltip={item.title}
-                  isActive={pathname === item.url}
+                  isActive={pathname === item.url || (item.items && pathname.startsWith(item.url))}
                 >
                   <Link href={item.url}>
                     {item.icon && <item.icon className="w-4 h-4" />}
@@ -288,13 +282,14 @@ function SidebarLogo() {
   const isCollapsed = state === "collapsed"
   
   if (isCollapsed) {
-    // Show only the icon when collapsed
+    // Show only the icon when collapsed - larger size
     return (
-      <LogoIcon 
-        size="md" 
-        variant="gradient"
-        className="mx-auto"
-      />
+      <div className="flex justify-center w-full">
+        <LogoIcon 
+          size="lg" 
+          variant="gradient"
+        />
+      </div>
     )
   }
   
@@ -308,22 +303,28 @@ function SidebarLogo() {
 }
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { toggleSidebar } = useSidebar()
+  
   return (
     <Sidebar collapsible="icon" variant="inset" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/admin">
-                <SidebarLogo />
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarHeader className="p-0">
+        <div className="flex items-center justify-between p-2 gap-2 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-center">
+          <Link href="/" className="flex items-center group-data-[collapsible=icon]:w-full">
+            <SidebarLogo />
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 group-data-[collapsible=icon]:mt-2"
+            onClick={toggleSidebar}
+          >
+            <Menu className="h-4 w-4" />
+            <span className="sr-only">Toggle Sidebar</span>
+          </Button>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain />
-        <NavSecondary />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

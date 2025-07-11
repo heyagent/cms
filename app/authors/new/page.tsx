@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { blogAPI } from '@/lib/api';
-import BlogForm from '@/components/admin/BlogForm';
+import { authorsAPI } from '@/lib/api';
+import AuthorForm from '@/components/admin/AuthorForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
-export default function NewBlogPage() {
+export default function NewAuthorPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,10 +17,14 @@ export default function NewBlogPage() {
       setLoading(true);
       setError(null);
       
-      await blogAPI.create(data);
-      router.push('/admin/blog');
+      await authorsAPI.create(data);
+      router.push('/authors');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create post');
+      if (err instanceof Error && err.message.includes('already exists')) {
+        setError('An author with this slug already exists. Please choose a different slug.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to create author');
+      }
       setLoading(false);
     }
   };
@@ -29,10 +33,10 @@ export default function NewBlogPage() {
     <div>
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold">
-          Create Blog Post
+          Create Author
         </h1>
         <p className="mt-1 text-sm md:text-base text-muted-foreground">
-          Write a new blog post
+          Add a new blog post author
         </p>
       </div>
 
@@ -43,7 +47,7 @@ export default function NewBlogPage() {
         </Alert>
       )}
 
-      <BlogForm
+      <AuthorForm
         onSubmit={handleSubmit}
         loading={loading}
       />

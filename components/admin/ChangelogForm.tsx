@@ -80,7 +80,7 @@ export default function ChangelogForm({ initialData, onSubmit, loading = false }
     if (form.formState.isDirty && !confirm('You have unsaved changes. Are you sure you want to leave?')) {
       return;
     }
-    router.push('/admin/changelog');
+    router.push('/changelog');
   };
 
   return (

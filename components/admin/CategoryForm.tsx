@@ -70,7 +70,7 @@ export default function CategoryForm({ initialData, onSubmit, loading = false }:
     if (form.formState.isDirty && !confirm('You have unsaved changes. Are you sure you want to leave?')) {
       return;
     }
-    router.push('/admin/categories');
+    router.push('/categories');
   };
 
   return (

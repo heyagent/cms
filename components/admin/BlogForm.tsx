@@ -147,7 +147,7 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
     if (form.formState.isDirty && !confirm('You have unsaved changes. Are you sure you want to leave?')) {
       return;
     }
-    router.push('/admin/blog');
+    router.push('/blog');
   };
 
   if (loadingData) {

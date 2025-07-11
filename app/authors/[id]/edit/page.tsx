@@ -2,46 +2,46 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { categoriesAPI, type BlogCategory } from '@/lib/api';
-import CategoryForm from '@/components/admin/CategoryForm';
+import { authorsAPI, type BlogAuthor } from '@/lib/api';
+import AuthorForm from '@/components/admin/AuthorForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function EditCategoryPage() {
+export default function EditAuthorPage() {
   const router = useRouter();
   const params = useParams();
   const id = parseInt(params.id as string);
   
-  const [data, setData] = useState<BlogCategory | null>(null);
+  const [data, setData] = useState<BlogAuthor | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isNaN(id)) {
-      fetchCategory();
+      fetchAuthor();
     } else {
-      setError('Invalid category ID');
+      setError('Invalid author ID');
       setLoading(false);
     }
   }, [id]);
 
-  const fetchCategory = async () => {
+  const fetchAuthor = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await categoriesAPI.getList();
-      const category = response.data.find(c => c.id === id);
+      const response = await authorsAPI.getList();
+      const author = response.data.find(a => a.id === id);
       
-      if (category) {
-        setData(category);
+      if (author) {
+        setData(author);
       } else {
-        setError('Category not found');
+        setError('Author not found');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch category');
+      setError(err instanceof Error ? err.message : 'Failed to fetch author');
     } finally {
       setLoading(false);
     }
@@ -52,13 +52,13 @@ export default function EditCategoryPage() {
       setSubmitting(true);
       setError(null);
       
-      await categoriesAPI.update(id, formData);
-      router.push('/admin/categories');
+      await authorsAPI.update(id, formData);
+      router.push('/authors');
     } catch (err) {
       if (err instanceof Error && err.message.includes('already exists')) {
-        setError('A category with this slug already exists. Please choose a different slug.');
+        setError('An author with this slug already exists. Please choose a different slug.');
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to update category');
+        setError(err instanceof Error ? err.message : 'Failed to update author');
       }
       setSubmitting(false);
     }
@@ -84,11 +84,11 @@ export default function EditCategoryPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-destructive/10 rounded-full mb-4">
             <AlertCircle className="w-8 h-8 text-destructive" />
           </div>
-          <h2 className="text-xl font-semibold mb-2">Error Loading Category</h2>
+          <h2 className="text-xl font-semibold mb-2">Error Loading Author</h2>
           <p className="text-muted-foreground mb-4">{error}</p>
           <Button
             variant="secondary"
-            onClick={() => router.push('/admin/categories')}
+            onClick={() => router.push('/authors')}
           >
             Back to List
           </Button>
@@ -101,10 +101,10 @@ export default function EditCategoryPage() {
     <div>
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold">
-          Edit Category
+          Edit Author
         </h1>
         <p className="mt-1 text-sm md:text-base text-muted-foreground">
-          Update category information for {data?.name}
+          Update author information for {data?.name}
         </p>
       </div>
 
@@ -115,7 +115,7 @@ export default function EditCategoryPage() {
         </Alert>
       )}
 
-      <CategoryForm
+      <AuthorForm
         initialData={data}
         onSubmit={handleSubmit}
         loading={submitting}

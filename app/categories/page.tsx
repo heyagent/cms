@@ -4,18 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { categoriesAPI, type BlogCategory } from '@/lib/api';
-import { Plus, Loader2, Folder } from 'lucide-react';
+import { Plus, Loader2, Folder, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable, createSortableHeader, createSelectColumn } from '@/components/ui/data-table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -75,12 +66,15 @@ export default function CategoryListPage() {
       cell: ({ row }) => {
         const category = row.original;
         return (
-          <div className="flex items-center space-x-3">
+          <Link 
+            href={`/categories/${category.id}/edit`}
+            className="flex items-center space-x-3 hover:opacity-70 transition-opacity"
+          >
             <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
               <Folder className="w-5 h-5 text-primary" />
             </div>
-            <span className="font-medium">{category.name}</span>
-          </div>
+            <span className="font-medium text-primary hover:underline">{category.name}</span>
+          </Link>
         );
       },
     },
@@ -104,37 +98,22 @@ export default function CategoryListPage() {
     },
     {
       id: "actions",
+      header: "",
       enableHiding: false,
       cell: ({ row }) => {
         const category = row.original;
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => router.push(`/admin/categories/${category.id}/edit`)}
-                className="cursor-pointer"
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => handleDelete(category.id!)}
-                className="cursor-pointer text-destructive focus:text-destructive"
-              >
-                <Trash className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:text-destructive"
+            onClick={() => handleDelete(category.id!)}
+            title="Delete category"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="sr-only">Delete</span>
+          </Button>
         );
       },
     },
@@ -169,7 +148,7 @@ export default function CategoryListPage() {
         </div>
         
         <Button asChild>
-          <Link href="/admin/categories/new">
+          <Link href="/categories/new">
             <Plus className="mr-2 h-4 w-4" />
             New Category
           </Link>

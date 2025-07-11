@@ -2,46 +2,40 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { authorsAPI, type BlogAuthor } from '@/lib/api';
-import AuthorForm from '@/components/admin/AuthorForm';
+import { changelogAPI } from '@/lib/api';
+import ChangelogForm from '@/components/admin/ChangelogForm';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function EditAuthorPage() {
+export default function EditChangelogPage() {
   const router = useRouter();
   const params = useParams();
   const id = parseInt(params.id as string);
   
-  const [data, setData] = useState<BlogAuthor | null>(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isNaN(id)) {
-      fetchAuthor();
+      fetchEntry();
     } else {
-      setError('Invalid author ID');
+      setError('Invalid changelog ID');
       setLoading(false);
     }
   }, [id]);
 
-  const fetchAuthor = async () => {
+  const fetchEntry = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await authorsAPI.getList();
-      const author = response.data.find(a => a.id === id);
-      
-      if (author) {
-        setData(author);
-      } else {
-        setError('Author not found');
-      }
+      const response = await changelogAPI.getById(id);
+      setData(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch author');
+      setError(err instanceof Error ? err.message : 'Failed to fetch entry');
     } finally {
       setLoading(false);
     }
@@ -52,14 +46,10 @@ export default function EditAuthorPage() {
       setSubmitting(true);
       setError(null);
       
-      await authorsAPI.update(id, formData);
-      router.push('/admin/authors');
+      await changelogAPI.update(id, formData);
+      router.push('/changelog');
     } catch (err) {
-      if (err instanceof Error && err.message.includes('already exists')) {
-        setError('An author with this slug already exists. Please choose a different slug.');
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to update author');
-      }
+      setError(err instanceof Error ? err.message : 'Failed to update entry');
       setSubmitting(false);
     }
   };
@@ -84,11 +74,11 @@ export default function EditAuthorPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-destructive/10 rounded-full mb-4">
             <AlertCircle className="w-8 h-8 text-destructive" />
           </div>
-          <h2 className="text-xl font-semibold mb-2">Error Loading Author</h2>
+          <h2 className="text-xl font-semibold mb-2">Error Loading Entry</h2>
           <p className="text-muted-foreground mb-4">{error}</p>
           <Button
             variant="secondary"
-            onClick={() => router.push('/admin/authors')}
+            onClick={() => router.push('/changelog')}
           >
             Back to List
           </Button>
@@ -101,10 +91,10 @@ export default function EditAuthorPage() {
     <div>
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold">
-          Edit Author
+          Edit Changelog Entry
         </h1>
         <p className="mt-1 text-sm md:text-base text-muted-foreground">
-          Update author information for {data?.name}
+          Update the details for version {data?.version}
         </p>
       </div>
 
@@ -115,7 +105,7 @@ export default function EditAuthorPage() {
         </Alert>
       )}
 
-      <AuthorForm
+      <ChangelogForm
         initialData={data}
         onSubmit={handleSubmit}
         loading={submitting}
