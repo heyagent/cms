@@ -123,8 +123,9 @@ export default function Sidebar({ isOpen: isOpenProp, onClose }: SidebarProps) {
       submenu: [
         { label: 'All Posts', href: '/admin/blog', icon: <RiCircleFill className="w-2 h-2 text-amber-400" /> },
         { label: 'Create New', href: '/admin/blog/new', icon: <RiCircleFill className="w-2 h-2 text-amber-400" /> },
-        { label: 'Categories', href: '/admin/blog/categories', icon: <RiCircleFill className="w-2 h-2 text-amber-400" /> },
-        { label: 'Tags', href: '/admin/blog/tags', icon: <RiCircleFill className="w-2 h-2 text-amber-400" /> },
+        { label: 'Authors', href: '/admin/authors', icon: <RiCircleFill className="w-2 h-2 text-amber-400" /> },
+        { label: 'Categories', href: '/admin/categories', icon: <RiCircleFill className="w-2 h-2 text-amber-400" /> },
+        { label: 'Tags', href: '/admin/tags', icon: <RiCircleFill className="w-2 h-2 text-amber-400" /> },
       ],
     },
     {

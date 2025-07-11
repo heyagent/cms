@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { changelogAPI } from '@/lib/api';
+import Link from 'next/link';
+import { changelogAPI, blogAPI, type BlogStats } from '@/lib/api';
+import { RiArticleLine, RiHashtag } from 'react-icons/ri';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -10,6 +12,7 @@ export default function AdminDashboard() {
     categories: 0,
     tags: 0,
   });
+  const [blogStats, setBlogStats] = useState<BlogStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,11 +21,19 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      const changelogStats = await changelogAPI.getStats();
-      setStats(prev => ({
-        ...prev,
+      // Fetch both changelog and blog stats in parallel
+      const [changelogStats, blogStatsResponse] = await Promise.all([
+        changelogAPI.getStats(),
+        blogAPI.getStats(),
+      ]);
+
+      setBlogStats(blogStatsResponse.data);
+      setStats({
         changelog: changelogStats.data.total,
-      }));
+        blog: blogStatsResponse.data.totalPosts,
+        categories: blogStatsResponse.data.totalCategories,
+        tags: blogStatsResponse.data.totalTags,
+      });
     } catch (err) {
       console.error('Failed to fetch stats:', err);
     } finally {
@@ -105,20 +116,115 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-4 md:p-6">
-        <h2 className="text-lg md:text-xl font-semibold text-slate-900 dark:text-white mb-4">
-          Recent Activity
-        </h2>
-        <div className="text-center py-8 md:py-12">
-          <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-gray-100 dark:bg-slate-800 rounded-full mb-3 md:mb-4">
-            <svg className="w-6 h-6 md:w-8 md:h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
+      {/* Recent Activity and Popular Tags Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        {/* Recent Blog Posts */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg md:text-xl font-semibold text-slate-900 dark:text-white">
+              Recent Blog Posts
+            </h2>
+            <Link
+              href="/admin/blog"
+              className="text-sm text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+            >
+              View all →
+            </Link>
           </div>
-          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 px-4">
-            No recent activity. Start by creating your first blog post or changelog entry.
-          </p>
+          
+          {loading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          ) : blogStats?.recentPosts && blogStats.recentPosts.length > 0 ? (
+            <div className="space-y-3">
+              {blogStats.recentPosts.map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/admin/blog/${post.id}/edit`}
+                  className="block group"
+                >
+                  <div className="flex items-start gap-3">
+                    <RiArticleLine className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 truncate">
+                        {post.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {new Date(post.date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-slate-800 rounded-full mb-3">
+                <RiArticleLine className="w-6 h-6 text-gray-400" />
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                No blog posts yet.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Popular Tags */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg md:text-xl font-semibold text-slate-900 dark:text-white">
+              Popular Tags
+            </h2>
+            <Link
+              href="/admin/tags"
+              className="text-sm text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+            >
+              View all →
+            </Link>
+          </div>
+          
+          {loading ? (
+            <div className="flex flex-wrap gap-2">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-6 bg-gray-200 dark:bg-slate-700 rounded-full w-16"></div>
+                </div>
+              ))}
+            </div>
+          ) : blogStats?.popularTags && blogStats.popularTags.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {blogStats.popularTags.slice(0, 10).map((tag, index) => (
+                <Link
+                  key={tag.tag}
+                  href={`/admin/blog?tag=${encodeURIComponent(tag.tag)}`}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-full text-sm hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                >
+                  <RiHashtag className="w-3 h-3" />
+                  <span>{tag.tag}</span>
+                  <span className="text-xs opacity-70">({tag.count})</span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-slate-800 rounded-full mb-3">
+                <RiHashtag className="w-6 h-6 text-gray-400" />
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                No tags yet.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
