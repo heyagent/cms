@@ -1,53 +1,49 @@
-'use client';
+"use client"
 
-import { useState, useEffect } from 'react';
-import Sidebar from '@/components/admin/Sidebar';
-import Header from '@/components/admin/Header';
-import clsx from 'clsx';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { AdminSidebar } from "@/components/admin/new-sidebar"
+import { Separator } from "@/components/ui/separator"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 export default function AdminLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    // Listen for sidebar collapse events
-    const handleSidebarCollapse = (event: CustomEvent) => {
-      setIsCollapsed(event.detail);
-    };
-
-    window.addEventListener('sidebar-collapsed', handleSidebarCollapse as EventListener);
-
-    return () => {
-      window.removeEventListener('sidebar-collapsed', handleSidebarCollapse as EventListener);
-    };
-  }, []);
-
-  const handleMenuClick = () => {
-    setIsSidebarOpen(true);
-  };
-
-  const handleSidebarClose = () => {
-    setIsSidebarOpen(false);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
-      <Header onMenuClick={handleMenuClick} isCollapsed={isCollapsed} />
-      <Sidebar isOpen={isSidebarOpen} onClose={handleSidebarClose} />
-      
-      {/* Main content */}
-      <div className={clsx(
-        "transition-all duration-300 pt-14 md:pt-0",
-        isCollapsed ? "md:ml-20" : "md:ml-56 lg:ml-64"
-      )}>
-        <main className="min-h-screen p-4 md:p-6 lg:p-8">
+    <SidebarProvider>
+      <AdminSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="/admin">
+                    Admin
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Dashboard</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {children}
-        </main>
-      </div>
-    </div>
-  );
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+  )
 }

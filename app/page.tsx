@@ -1,3 +1,6 @@
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+
 export default function Home() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
@@ -8,12 +11,11 @@ export default function Home() {
         <p className="text-lg text-slate-600 dark:text-slate-400 mb-8">
           Admin interface for managing HeyAgent content
         </p>
-        <a
-          href="/admin"
-          className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-400 to-fuchsia-600 text-white font-semibold rounded-lg hover:from-amber-500 hover:to-fuchsia-700 transition-all"
-        >
-          Go to Admin Dashboard
-        </a>
+        <Button asChild size="lg">
+          <Link href="/admin">
+            Go to Admin Dashboard
+          </Link>
+        </Button>
       </div>
     </div>
   );

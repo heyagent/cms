@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { authorsAPI, type BlogAuthor } from '@/lib/api';
 import AuthorForm from '@/components/admin/AuthorForm';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function EditAuthorPage() {
   const router = useRouter();
@@ -64,9 +67,11 @@ export default function EditAuthorPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-          <p className="mt-2 text-slate-600 dark:text-slate-400">Loading...</p>
+        <div className="text-center space-y-4">
+          <div className="flex justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -75,20 +80,18 @@ export default function EditAuthorPage() {
   if (error && !data) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full mb-4">
-            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        <div className="text-center max-w-md">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-destructive/10 rounded-full mb-4">
+            <AlertCircle className="w-8 h-8 text-destructive" />
           </div>
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Error Loading Author</h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-4">{error}</p>
-          <button
+          <h2 className="text-xl font-semibold mb-2">Error Loading Author</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button
+            variant="secondary"
             onClick={() => router.push('/admin/authors')}
-            className="px-4 py-2 bg-gray-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-gray-300 dark:hover:bg-slate-700 transition-colors"
           >
             Back to List
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -97,18 +100,19 @@ export default function EditAuthorPage() {
   return (
     <div>
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-2xl md:text-3xl font-bold">
           Edit Author
         </h1>
-        <p className="mt-1 text-sm md:text-base text-slate-600 dark:text-slate-400">
+        <p className="mt-1 text-sm md:text-base text-muted-foreground">
           Update author information for {data?.name}
         </p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-red-600 dark:text-red-400">{error}</p>
-        </div>
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <AuthorForm

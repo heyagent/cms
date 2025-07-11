@@ -5,24 +5,26 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { 
-  RiBold, 
-  RiItalic, 
-  RiStrikethrough, 
-  RiH2, 
-  RiH3, 
-  RiH4,
-  RiListOrdered,
-  RiListUnordered,
-  RiDoubleQuotesL,
-  RiSeparator,
-  RiCodeSSlashLine,
-  RiLinkM,
-  RiLinkUnlinkM,
-  RiArrowGoBackLine,
-  RiArrowGoForwardLine,
-} from 'react-icons/ri';
-import clsx from 'clsx';
+  Bold, 
+  Italic, 
+  Strikethrough, 
+  Heading2, 
+  Heading3, 
+  Heading4,
+  ListOrdered,
+  List,
+  Quote,
+  Minus,
+  Code,
+  Link as LinkIcon,
+  Unlink,
+  Undo,
+  Redo,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 interface RichTextEditorProps {
   content: string;
@@ -60,7 +62,7 @@ export default function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: clsx(
+        class: cn(
           'prose prose-slate dark:prose-invert max-w-none',
           'focus:outline-none min-h-[400px] px-4 py-3',
           'prose-headings:font-bold',
@@ -118,29 +120,27 @@ export default function RichTextEditor({
     title: string;
     children: React.ReactNode;
   }) => (
-    <button
+    <Button
       type="button"
+      variant={isActive ? "secondary" : "ghost"}
+      size="sm"
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={clsx(
-        'p-2 rounded transition-colors',
-        isActive 
-          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-          : 'text-slate-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800',
-        disabled && 'opacity-50 cursor-not-allowed'
+      className={cn(
+        isActive && 'bg-amber-100 text-amber-700 hover:bg-amber-100 hover:text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/30 dark:hover:text-amber-300'
       )}
     >
       {children}
-    </button>
+    </Button>
   );
 
   const ToolbarSeparator = () => (
-    <div className="w-px h-6 bg-gray-300 dark:bg-slate-700 mx-1" />
+    <Separator orientation="vertical" className="h-6 mx-1" />
   );
 
   return (
-    <div className={clsx(
+    <div className={cn(
       'border rounded-lg overflow-hidden',
       error ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-slate-700'
     )}>
@@ -152,21 +152,21 @@ export default function RichTextEditor({
           isActive={editor.isActive('heading', { level: 2 })}
           title="Heading 2 (Ctrl+Alt+2)"
         >
-          <RiH2 className="w-5 h-5" />
+          <Heading2 className="w-5 h-5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
           isActive={editor.isActive('heading', { level: 3 })}
           title="Heading 3 (Ctrl+Alt+3)"
         >
-          <RiH3 className="w-5 h-5" />
+          <Heading3 className="w-5 h-5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
           isActive={editor.isActive('heading', { level: 4 })}
           title="Heading 4 (Ctrl+Alt+4)"
         >
-          <RiH4 className="w-5 h-5" />
+          <Heading4 className="w-5 h-5" />
         </ToolbarButton>
 
         <ToolbarSeparator />
@@ -177,21 +177,21 @@ export default function RichTextEditor({
           isActive={editor.isActive('bold')}
           title="Bold (Ctrl+B)"
         >
-          <RiBold className="w-5 h-5" />
+          <Bold className="w-5 h-5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleItalic().run()}
           isActive={editor.isActive('italic')}
           title="Italic (Ctrl+I)"
         >
-          <RiItalic className="w-5 h-5" />
+          <Italic className="w-5 h-5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleStrike().run()}
           isActive={editor.isActive('strike')}
           title="Strikethrough (Ctrl+Shift+X)"
         >
-          <RiStrikethrough className="w-5 h-5" />
+          <Strikethrough className="w-5 h-5" />
         </ToolbarButton>
 
         <ToolbarSeparator />
@@ -202,14 +202,14 @@ export default function RichTextEditor({
           isActive={editor.isActive('link')}
           title="Add/Edit Link (Ctrl+K)"
         >
-          <RiLinkM className="w-5 h-5" />
+          <LinkIcon className="w-5 h-5" />
         </ToolbarButton>
         {editor.isActive('link') && (
           <ToolbarButton
             onClick={() => editor.chain().focus().unsetLink().run()}
             title="Remove Link"
           >
-            <RiLinkUnlinkM className="w-5 h-5" />
+            <Unlink className="w-5 h-5" />
           </ToolbarButton>
         )}
         <ToolbarButton
@@ -217,7 +217,7 @@ export default function RichTextEditor({
           isActive={editor.isActive('code')}
           title="Inline Code (Ctrl+E)"
         >
-          <RiCodeSSlashLine className="w-5 h-5" />
+          <Code className="w-5 h-5" />
         </ToolbarButton>
 
         <ToolbarSeparator />
@@ -228,14 +228,14 @@ export default function RichTextEditor({
           isActive={editor.isActive('bulletList')}
           title="Bullet List (Ctrl+Shift+8)"
         >
-          <RiListUnordered className="w-5 h-5" />
+          <List className="w-5 h-5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           isActive={editor.isActive('orderedList')}
           title="Numbered List (Ctrl+Shift+7)"
         >
-          <RiListOrdered className="w-5 h-5" />
+          <ListOrdered className="w-5 h-5" />
         </ToolbarButton>
 
         <ToolbarSeparator />
@@ -246,13 +246,13 @@ export default function RichTextEditor({
           isActive={editor.isActive('blockquote')}
           title="Blockquote (Ctrl+Shift+B)"
         >
-          <RiDoubleQuotesL className="w-5 h-5" />
+          <Quote className="w-5 h-5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
           title="Horizontal Rule"
         >
-          <RiSeparator className="w-5 h-5" />
+          <Minus className="w-5 h-5" />
         </ToolbarButton>
 
         <ToolbarSeparator />
@@ -263,14 +263,14 @@ export default function RichTextEditor({
           disabled={!editor.can().undo()}
           title="Undo (Ctrl+Z)"
         >
-          <RiArrowGoBackLine className="w-5 h-5" />
+          <Undo className="w-5 h-5" />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
           title="Redo (Ctrl+Y)"
         >
-          <RiArrowGoForwardLine className="w-5 h-5" />
+          <Redo className="w-5 h-5" />
         </ToolbarButton>
       </div>
 

@@ -2,25 +2,39 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { blogAPI, type BlogPost, type PaginationData } from '@/lib/api';
-import { RiAddLine, RiEditLine, RiDeleteBinLine, RiCloseLine } from 'react-icons/ri';
-import clsx from 'clsx';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { blogAPI, type BlogPost } from '@/lib/api';
+import { Plus, Calendar, Loader2, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DataTable, createSortableHeader } from '@/components/ui/data-table';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
+import type { ColumnDef } from '@tanstack/react-table';
 
 export default function BlogListPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const tagFilter = searchParams.get('tag');
   
   const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [pagination, setPagination] = useState<PaginationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchPosts();
-  }, [currentPage, searchTerm, tagFilter]);
+  }, [tagFilter]);
 
   const fetchPosts = async () => {
     try {
@@ -28,16 +42,14 @@ export default function BlogListPage() {
       setError(null);
       
       const response = await blogAPI.getList({
-        page: currentPage,
-        limit: 10,
-        search: searchTerm || undefined,
+        limit: 100, // Get all posts for now
         tags: tagFilter ? [tagFilter] : undefined,
       });
       
       setPosts(response.data);
-      setPagination(response.pagination || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch posts');
+      toast.error('Failed to load blog posts');
     } finally {
       setLoading(false);
     }
@@ -50,233 +62,174 @@ export default function BlogListPage() {
 
     try {
       await blogAPI.delete(id);
+      toast.success('Blog post deleted successfully');
       await fetchPosts(); // Refresh the list
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete post');
+      const message = err instanceof Error ? err.message : 'Failed to delete post';
+      setError(message);
+      toast.error(message);
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1); // Reset to first page when searching
-  };
+  const columns: ColumnDef<BlogPost>[] = [
+    {
+      accessorKey: "title",
+      header: createSortableHeader("Title"),
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <span className="font-medium">{row.getValue("title")}</span>
+          <span className="text-xs text-muted-foreground">/{row.original.slug}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "author.name",
+      header: createSortableHeader("Author"),
+      cell: ({ row }) => row.original.author?.name || 'Unknown',
+    },
+    {
+      accessorKey: "category.name",
+      header: createSortableHeader("Category"),
+      cell: ({ row }) => row.original.category?.name || 'Uncategorized',
+    },
+    {
+      accessorKey: "date",
+      header: createSortableHeader("Date"),
+      cell: ({ row }) => {
+        const date = new Date(row.getValue("date"));
+        return (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Calendar className="h-4 w-4" />
+            {date.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })}
+          </div>
+        );
+      },
+    },
+    {
+      id: "tags",
+      header: "Tags",
+      cell: ({ row }) => {
+        const tags = row.original.tags || [];
+        return (
+          <div className="flex flex-wrap gap-1">
+            {tags.slice(0, 3).map((tag, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+            {tags.length > 3 && (
+              <span className="text-xs text-muted-foreground">
+                +{tags.length - 3} more
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const post = row.original;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => router.push(`/admin/blog/${post.id}/edit`)}
+                className="cursor-pointer"
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => handleDelete(post.id!)}
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-32 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Page Header */}
-      <div className="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl md:text-3xl font-bold">
             Blog Posts
           </h1>
-          <p className="mt-1 text-sm md:text-base text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-sm md:text-base text-muted-foreground">
             Manage your blog content
           </p>
           {tagFilter && (
-            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 rounded-full text-sm">
+            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm">
               <span>Filtered by tag: <strong>{tagFilter}</strong></span>
               <Link
                 href="/admin/blog"
-                className="hover:text-amber-900 dark:hover:text-amber-100"
+                className="hover:opacity-80"
                 title="Clear filter"
               >
-                <RiCloseLine className="w-4 h-4" />
+                <X className="w-4 h-4" />
               </Link>
             </div>
           )}
         </div>
         
-        <Link
-          href="/admin/blog/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
-        >
-          <RiAddLine className="w-5 h-5" />
-          <span>New Post</span>
-        </Link>
+        <Button asChild>
+          <Link href="/admin/blog/new">
+            <Plus className="mr-2 h-4 w-4" />
+            New Post
+          </Link>
+        </Button>
       </div>
 
-      {/* Search Bar */}
-      <form onSubmit={handleSearch} className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search blog posts..."
-            className="w-full px-4 py-2 pl-10 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-          />
-          <svg
-            className="absolute left-3 top-2.5 w-5 h-5 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
-      </form>
-
-      {/* Error Message */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-red-600 dark:text-red-400">{error}</p>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">Loading...</p>
-          </div>
-        ) : posts.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-slate-600 dark:text-slate-400">
-              {searchTerm ? 'No posts found matching your search.' : 'No blog posts yet.'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Author
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Tags
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                {posts.map((post) => (
-                  <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">
-                          {post.title}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          /{post.slug}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                      {post.author?.name || 'Unknown'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                      {post.category?.name || 'Uncategorized'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                      {formatDate(post.date)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {post.tags.slice(0, 3).map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 rounded-full"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {post.tags.length > 3 && (
-                          <span className="text-xs text-slate-500 dark:text-slate-400">
-                            +{post.tags.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/admin/blog/${post.id}/edit`}
-                          className="p-1.5 text-slate-600 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400 transition-colors"
-                          title="Edit"
-                        >
-                          <RiEditLine className="w-4 h-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(post.id!)}
-                          className="p-1.5 text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition-colors"
-                          title="Delete"
-                        >
-                          <RiDeleteBinLine className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{' '}
-                {Math.min(pagination.currentPage * pagination.limit, pagination.totalItems)} of{' '}
-                {pagination.totalItems} posts
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={!pagination.hasPreviousPage}
-                  className={clsx(
-                    'px-3 py-1 rounded-md text-sm font-medium transition-colors',
-                    pagination.hasPreviousPage
-                      ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-300 dark:border-slate-600'
-                      : 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-600 cursor-not-allowed'
-                  )}
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={!pagination.hasNextPage}
-                  className={clsx(
-                    'px-3 py-1 rounded-md text-sm font-medium transition-colors',
-                    pagination.hasNextPage
-                      ? 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-300 dark:border-slate-600'
-                      : 'bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-600 cursor-not-allowed'
-                  )}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Data Table */}
+      <DataTable
+        columns={columns}
+        data={posts}
+        searchKey="title"
+        pageSize={10}
+      />
     </div>
   );
 }

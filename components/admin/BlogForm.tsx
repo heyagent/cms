@@ -2,10 +2,33 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { RiAddLine, RiDeleteBinLine } from 'react-icons/ri';
-import clsx from 'clsx';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { blogSchema, type Blog } from '@/lib/schemas';
 import type { BlogPost, BlogAuthor, BlogCategory } from '@/lib/api';
 import { authorsAPI, categoriesAPI } from '@/lib/api';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { AlertCircle, Loader2, Plus, Trash2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import RichTextEditor from './RichTextEditor';
 
 interface BlogFormProps {
@@ -19,21 +42,31 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
   const [authors, setAuthors] = useState<BlogAuthor[]>([]);
   const [categories, setCategories] = useState<BlogCategory[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  
-  const [formData, setFormData] = useState<Omit<BlogPost, 'id' | 'author' | 'category'>>({
-    slug: '',
-    title: '',
-    summary: '',
-    content: '',
-    authorId: 0,
-    categoryId: 0,
-    date: new Date().toISOString().split('T')[0],
-    readTime: '5 min read',
-    tags: [],
+  const [submitError, setSubmitError] = useState<string>('');
+
+  const form = useForm<Blog>({
+    resolver: zodResolver(blogSchema),
+    defaultValues: {
+      slug: initialData?.slug || '',
+      title: initialData?.title || '',
+      summary: initialData?.summary || '',
+      content: initialData?.content || '',
+      authorId: initialData?.authorId || initialData?.author?.id || 0,
+      categoryId: initialData?.categoryId || initialData?.category?.id || 0,
+      date: initialData?.date ? initialData.date.split('T')[0] : new Date().toISOString().split('T')[0],
+      readTime: initialData?.readTime || '5 min read',
+      tags: initialData?.tags || [],
+    },
   });
-  
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isDirty, setIsDirty] = useState(false);
+
+  const {
+    fields: tagFields,
+    append: appendTag,
+    remove: removeTag,
+  } = useFieldArray({
+    control: form.control,
+    name: "tags",
+  });
 
   // Load authors and categories
   useEffect(() => {
@@ -49,6 +82,7 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
         setCategories(categoriesRes.data);
       } catch (error) {
         console.error('Failed to load authors/categories:', error);
+        setSubmitError('Failed to load authors and categories');
       } finally {
         setLoadingData(false);
       }
@@ -57,151 +91,56 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
     loadData();
   }, []);
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        slug: initialData.slug,
-        title: initialData.title,
-        summary: initialData.summary,
-        content: initialData.content,
-        authorId: initialData.authorId || initialData.author?.id || 0,
-        categoryId: initialData.categoryId || initialData.category?.id || 0,
-        date: initialData.date.split('T')[0],
-        readTime: initialData.readTime,
-        tags: initialData.tags || [],
-      });
-    }
-  }, [initialData]);
-
   // Auto-generate slug from title
   useEffect(() => {
-    if (!initialData && formData.title && !formData.slug) {
-      const generatedSlug = formData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      setFormData(prev => ({ ...prev, slug: generatedSlug }));
-    }
-  }, [formData.title, formData.slug, initialData]);
+    const subscription = form.watch((value, { name: fieldName }) => {
+      if (fieldName === 'title' && !initialData) {
+        const titleValue = value.title || '';
+        if (titleValue && !form.getValues('slug')) {
+          const generatedSlug = titleValue
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+          form.setValue('slug', generatedSlug);
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, initialData]);
 
   // Calculate read time from content
   useEffect(() => {
-    if (formData.content) {
-      // Strip HTML tags to get plain text for word count
-      const plainText = formData.content.replace(/<[^>]*>/g, '').trim();
-      const words = plainText.split(/\s+/).filter(word => word.length > 0).length;
-      const minutes = Math.max(1, Math.ceil(words / 200)); // Average reading speed, minimum 1 minute
-      setFormData(prev => ({ ...prev, readTime: `${minutes} min read` }));
+    const subscription = form.watch((value, { name: fieldName }) => {
+      if (fieldName === 'content') {
+        const contentValue = value.content || '';
+        if (contentValue) {
+          // Strip HTML tags to get plain text for word count
+          const plainText = contentValue.replace(/<[^>]*>/g, '').trim();
+          const words = plainText.split(/\s+/).filter(word => word.length > 0).length;
+          const minutes = Math.max(1, Math.ceil(words / 200)); // Average reading speed
+          form.setValue('readTime', `${minutes} min read`);
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  const handleSubmit = async (data: Blog) => {
+    try {
+      setSubmitError('');
+      // Filter out empty tags
+      const cleanedData = {
+        ...data,
+        tags: data.tags.filter(tag => tag.trim()),
+      };
+      await onSubmit(cleanedData);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Failed to save blog post');
     }
-  }, [formData.content]);
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.slug.trim()) {
-      newErrors.slug = 'Slug is required';
-    } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(formData.slug)) {
-      newErrors.slug = 'Slug must be lowercase with hyphens only';
-    }
-
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
-    }
-
-    if (!formData.summary.trim()) {
-      newErrors.summary = 'Summary is required';
-    }
-
-    // Check if content has actual text (not just empty HTML tags)
-    const contentText = formData.content.replace(/<[^>]*>/g, '').trim();
-    if (!contentText) {
-      newErrors.content = 'Content is required';
-    }
-
-    if (!formData.authorId) {
-      newErrors.authorId = 'Author is required';
-    }
-
-    if (!formData.categoryId) {
-      newErrors.categoryId = 'Category is required';
-    }
-
-    if (!formData.date) {
-      newErrors.date = 'Date is required';
-    }
-
-    // Tags validation
-    const hasEmptyTag = formData.tags.some(tag => !tag.trim());
-    if (hasEmptyTag) {
-      newErrors.tags = 'All tags must have content';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: name === 'authorId' || name === 'categoryId' ? parseInt(value) : value 
-    }));
-    setIsDirty(true);
-    
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  const handleTagChange = (index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.map((tag, i) => (i === index ? value : tag)),
-    }));
-    setIsDirty(true);
-
-    if (errors.tags) {
-      setErrors(prev => ({ ...prev, tags: '' }));
-    }
-  };
-
-  const handleAddTag = () => {
-    setFormData(prev => ({
-      ...prev,
-      tags: [...prev.tags, ''],
-    }));
-    setIsDirty(true);
-  };
-
-  const handleRemoveTag = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter((_, i) => i !== index),
-    }));
-    setIsDirty(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    // Filter out empty tags
-    const dataToSubmit = {
-      ...formData,
-      tags: formData.tags.filter(tag => tag.trim()),
-    };
-
-    await onSubmit(dataToSubmit);
   };
 
   const handleCancel = () => {
-    if (isDirty && !confirm('You have unsaved changes. Are you sure you want to leave?')) {
+    if (form.formState.isDirty && !confirm('You have unsaved changes. Are you sure you want to leave?')) {
       return;
     }
     router.push('/admin/blog');
@@ -209,322 +148,266 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
 
   if (loadingData) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-          <p className="mt-2 text-slate-600 dark:text-slate-400">Loading...</p>
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <div className="grid grid-cols-2 gap-6">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
         </div>
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Title Field */}
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-          Title
-        </label>
-        <input
-          type="text"
-          id="title"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {submitError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{submitError}</AlertDescription>
+          </Alert>
+        )}
+
+        <FormField
+          control={form.control}
           name="title"
-          value={formData.title}
-          onChange={handleInputChange}
-          placeholder="Enter blog post title"
-          className={clsx(
-            'w-full px-3 py-2 rounded-lg border',
-            'bg-white dark:bg-slate-900',
-            'focus:outline-none focus:ring-2 focus:ring-amber-500',
-            errors.title
-              ? 'border-red-500 dark:border-red-400'
-              : 'border-gray-300 dark:border-slate-700'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Title</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter blog post title" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
-        {errors.title && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.title}</p>
-        )}
-      </div>
 
-      {/* Slug Field */}
-      <div>
-        <label htmlFor="slug" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-          Slug
-        </label>
-        <input
-          type="text"
-          id="slug"
+        <FormField
+          control={form.control}
           name="slug"
-          value={formData.slug}
-          onChange={handleInputChange}
-          placeholder="post-url-slug"
-          className={clsx(
-            'w-full px-3 py-2 rounded-lg border',
-            'bg-white dark:bg-slate-900',
-            'focus:outline-none focus:ring-2 focus:ring-amber-500',
-            errors.slug
-              ? 'border-red-500 dark:border-red-400'
-              : 'border-gray-300 dark:border-slate-700'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Slug</FormLabel>
+              <FormControl>
+                <Input placeholder="post-url-slug" {...field} />
+              </FormControl>
+              <FormDescription>
+                URL-friendly version of the title (auto-generated if empty)
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
           )}
         />
-        {errors.slug && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.slug}</p>
-        )}
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          URL-friendly version of the title (auto-generated if empty)
-        </p>
-      </div>
 
-      {/* Author and Category Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Author Field */}
-        <div>
-          <label htmlFor="authorId" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Author
-          </label>
-          <select
-            id="authorId"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
             name="authorId"
-            value={formData.authorId}
-            onChange={handleInputChange}
-            className={clsx(
-              'w-full px-3 py-2 rounded-lg border',
-              'bg-white dark:bg-slate-900',
-              'focus:outline-none focus:ring-2 focus:ring-amber-500',
-              errors.authorId
-                ? 'border-red-500 dark:border-red-400'
-                : 'border-gray-300 dark:border-slate-700'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Author</FormLabel>
+                <Select 
+                  onValueChange={(value) => field.onChange(parseInt(value))} 
+                  value={field.value?.toString()}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an author" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {authors.map((author) => (
+                      <SelectItem key={author.id} value={author.id.toString()}>
+                        {author.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
             )}
-          >
-            <option value={0}>Select an author</option>
-            {authors.map(author => (
-              <option key={author.id} value={author.id}>
-                {author.name}
-              </option>
-            ))}
-          </select>
-          {errors.authorId && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.authorId}</p>
-          )}
-        </div>
+          />
 
-        {/* Category Field */}
-        <div>
-          <label htmlFor="categoryId" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Category
-          </label>
-          <select
-            id="categoryId"
+          <FormField
+            control={form.control}
             name="categoryId"
-            value={formData.categoryId}
-            onChange={handleInputChange}
-            className={clsx(
-              'w-full px-3 py-2 rounded-lg border',
-              'bg-white dark:bg-slate-900',
-              'focus:outline-none focus:ring-2 focus:ring-amber-500',
-              errors.categoryId
-                ? 'border-red-500 dark:border-red-400'
-                : 'border-gray-300 dark:border-slate-700'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <Select 
+                  onValueChange={(value) => field.onChange(parseInt(value))} 
+                  value={field.value?.toString()}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
             )}
-          >
-            <option value={0}>Select a category</option>
-            {categories.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          {errors.categoryId && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.categoryId}</p>
-          )}
+          />
         </div>
-      </div>
 
-      {/* Date and Read Time Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Date Field */}
-        <div>
-          <label htmlFor="date" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Date
-          </label>
-          <input
-            type="date"
-            id="date"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
             name="date"
-            value={formData.date}
-            onChange={handleInputChange}
-            className={clsx(
-              'w-full px-3 py-2 rounded-lg border',
-              'bg-white dark:bg-slate-900',
-              'focus:outline-none focus:ring-2 focus:ring-amber-500',
-              errors.date
-                ? 'border-red-500 dark:border-red-400'
-                : 'border-gray-300 dark:border-slate-700'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
           />
-          {errors.date && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.date}</p>
-          )}
-        </div>
 
-        {/* Read Time Field */}
-        <div>
-          <label htmlFor="readTime" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-            Read Time
-          </label>
-          <input
-            type="text"
-            id="readTime"
+          <FormField
+            control={form.control}
             name="readTime"
-            value={formData.readTime}
-            onChange={handleInputChange}
-            placeholder="5 min read"
-            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Read Time</FormLabel>
+                <FormControl>
+                  <Input {...field} readOnly />
+                </FormControl>
+                <FormDescription>
+                  Automatically calculated from content
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Auto-calculated based on content length
-          </p>
         </div>
-      </div>
 
-      {/* Summary Field */}
-      <div>
-        <label htmlFor="summary" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-          Summary
-        </label>
-        <textarea
-          id="summary"
+        <FormField
+          control={form.control}
           name="summary"
-          value={formData.summary}
-          onChange={handleInputChange}
-          rows={3}
-          placeholder="Brief description of the blog post"
-          className={clsx(
-            'w-full px-3 py-2 rounded-lg border resize-none',
-            'bg-white dark:bg-slate-900',
-            'focus:outline-none focus:ring-2 focus:ring-amber-500',
-            errors.summary
-              ? 'border-red-500 dark:border-red-400'
-              : 'border-gray-300 dark:border-slate-700'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Summary</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Brief description of the blog post"
+                  className="resize-none"
+                  rows={3}
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                {field.value?.length || 0} / 500 characters
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
           )}
         />
-        {errors.summary && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.summary}</p>
-        )}
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          {formData.summary.length} characters
-        </p>
-      </div>
 
-      {/* Content Field */}
-      <div>
-        <label htmlFor="content" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-          Content
-        </label>
-        <RichTextEditor
-          content={formData.content}
-          onChange={(newContent) => {
-            setFormData(prev => ({ ...prev, content: newContent }));
-            setIsDirty(true);
-            if (errors.content) {
-              setErrors(prev => ({ ...prev, content: '' }));
-            }
-          }}
-          placeholder="Write your blog post content here..."
-          error={!!errors.content}
+        <FormField
+          control={form.control}
+          name="content"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Content</FormLabel>
+              <FormControl>
+                <RichTextEditor
+                  content={field.value}
+                  onChange={field.onChange}
+                  placeholder="Write your blog post content here..."
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {errors.content && (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.content}</p>
-        )}
-      </div>
 
-      {/* Tags Section */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            Tags
-          </label>
-          <button
-            type="button"
-            onClick={handleAddTag}
-            className="inline-flex items-center gap-1 px-2 py-1 text-sm text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
-          >
-            <RiAddLine className="w-4 h-4" />
-            Add Tag
-          </button>
-        </div>
-        
-        {errors.tags && (
-          <p className="mb-2 text-sm text-red-600 dark:text-red-400">{errors.tags}</p>
-        )}
-
-        <div className="space-y-2">
-          {formData.tags.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400 italic">
+        {/* Tags Section */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <FormLabel>Tags</FormLabel>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => appendTag('')}
+              className="gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              Add Tag
+            </Button>
+          </div>
+          
+          {tagFields.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">
               No tags added yet
             </p>
           ) : (
-            formData.tags.map((tag, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  type="text"
-                  value={tag}
-                  onChange={(e) => handleTagChange(index, e.target.value)}
-                  placeholder={`Tag ${index + 1}`}
-                  className="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveTag(index)}
-                  className="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                  title="Remove tag"
-                >
-                  <RiDeleteBinLine className="w-5 h-5" />
-                </button>
-              </div>
-            ))
+            <div className="space-y-2">
+              {tagFields.map((field, index) => (
+                <div key={field.id} className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`tags.${index}`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input 
+                            placeholder={`Tag ${index + 1}`}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeTag(index)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Form Actions */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
-        <button
-          type="submit"
-          disabled={loading}
-          className={clsx(
-            'flex-1 sm:flex-none px-6 py-2 rounded-lg font-medium transition-all',
-            'bg-gradient-to-r from-amber-400 to-fuchsia-600',
-            'text-white hover:shadow-lg',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-            'focus:outline-none focus:ring-2 focus:ring-amber-500'
-          )}
-        >
-          {loading ? (
-            <>
-              <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
-              Saving...
-            </>
-          ) : (
-            initialData ? 'Update Post' : 'Create Post'
-          )}
-        </button>
-        
-        <button
-          type="button"
-          onClick={handleCancel}
-          disabled={loading}
-          className={clsx(
-            'flex-1 sm:flex-none px-6 py-2 rounded-lg font-medium transition-colors',
-            'bg-gray-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
-            'hover:bg-gray-300 dark:hover:bg-slate-700',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-            'focus:outline-none focus:ring-2 focus:ring-gray-500'
-          )}
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+          <Button 
+            type="submit" 
+            disabled={loading}
+            className="flex-1 sm:flex-none"
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {loading ? 'Saving...' : (initialData ? 'Update Post' : 'Create Post')}
+          </Button>
+          
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+            disabled={loading}
+            className="flex-1 sm:flex-none"
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

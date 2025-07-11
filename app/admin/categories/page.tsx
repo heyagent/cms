@@ -2,15 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { categoriesAPI, type BlogCategory } from '@/lib/api';
-import { RiAddLine, RiEditLine, RiDeleteBinLine, RiFolderLine } from 'react-icons/ri';
-import clsx from 'clsx';
+import { Plus, Loader2, Folder } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DataTable, createSortableHeader } from '@/components/ui/data-table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Pencil, Trash } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
+import type { ColumnDef } from '@tanstack/react-table';
 
 export default function CategoryListPage() {
+  const router = useRouter();
   const [categories, setCategories] = useState<BlogCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchCategories();
@@ -22,21 +38,10 @@ export default function CategoryListPage() {
       setError(null);
       
       const response = await categoriesAPI.getList();
-      let categoriesList = response.data;
-      
-      // Apply client-side search filtering
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        categoriesList = categoriesList.filter(category => 
-          category.name.toLowerCase().includes(searchLower) ||
-          category.slug.toLowerCase().includes(searchLower) ||
-          (category.description && category.description.toLowerCase().includes(searchLower))
-        );
-      }
-      
-      setCategories(categoriesList);
+      setCategories(response.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch categories');
+      toast.error('Failed to load categories');
     } finally {
       setLoading(false);
     }
@@ -49,163 +54,141 @@ export default function CategoryListPage() {
 
     try {
       await categoriesAPI.delete(id);
+      toast.success('Category deleted successfully');
       await fetchCategories(); // Refresh the list
     } catch (err) {
       if (err instanceof Error && err.message.includes('existing posts')) {
-        alert('Cannot delete this category because it has existing blog posts. Please reassign or delete the posts first.');
+        toast.error('Cannot delete this category because it has existing blog posts. Please reassign or delete the posts first.');
       } else {
-        setError(err instanceof Error ? err.message : 'Failed to delete category');
+        const message = err instanceof Error ? err.message : 'Failed to delete category';
+        setError(message);
+        toast.error(message);
       }
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchCategories();
-  };
+  const columns: ColumnDef<BlogCategory>[] = [
+    {
+      accessorKey: "name",
+      header: createSortableHeader("Name"),
+      cell: ({ row }) => {
+        const category = row.original;
+        return (
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+              <Folder className="w-5 h-5 text-primary" />
+            </div>
+            <span className="font-medium">{category.name}</span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "slug",
+      header: createSortableHeader("Slug"),
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => {
+        const description = row.getValue("description") as string;
+        return description ? (
+          <span className="text-sm text-muted-foreground truncate max-w-xs block">
+            {description}
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground italic">No description</span>
+        );
+      },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const category = row.original;
 
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      fetchCategories();
-    }, 300);
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => router.push(`/admin/categories/${category.id}/edit`)}
+                className="cursor-pointer"
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => handleDelete(category.id!)}
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
 
-    return () => clearTimeout(delayDebounce);
-  }, [searchTerm]);
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-32 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Page Header */}
-      <div className="mb-6 md:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl md:text-3xl font-bold">
             Categories
           </h1>
-          <p className="mt-1 text-sm md:text-base text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-sm md:text-base text-muted-foreground">
             Manage blog post categories
           </p>
         </div>
         
-        <Link
-          href="/admin/categories/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
-        >
-          <RiAddLine className="w-5 h-5" />
-          <span>New Category</span>
-        </Link>
+        <Button asChild>
+          <Link href="/admin/categories/new">
+            <Plus className="mr-2 h-4 w-4" />
+            New Category
+          </Link>
+        </Button>
       </div>
 
-      {/* Search Bar */}
-      <form onSubmit={handleSearch} className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search categories..."
-            className="w-full px-4 py-2 pl-10 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-          />
-          <svg
-            className="absolute left-3 top-2.5 w-5 h-5 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        </div>
-      </form>
-
-      {/* Error Message */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-red-600 dark:text-red-400">{error}</p>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      {/* Categories Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">Loading...</p>
-          </div>
-        ) : categories.length === 0 ? (
-          <div className="p-8 text-center">
-            <RiFolderLine className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-            <p className="text-slate-600 dark:text-slate-400">
-              {searchTerm ? 'No categories found matching your search.' : 'No categories yet.'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Slug
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                {categories.map((category) => (
-                  <tr key={category.id} className="hover:bg-gray-50 dark:hover:bg-slate-800">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mr-3">
-                          <RiFolderLine className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <div className="text-sm font-medium text-slate-900 dark:text-white">
-                          {category.name}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-400">
-                      {category.slug}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
-                      <div className="max-w-xs truncate">
-                        {category.description || <span className="italic text-slate-400">No description</span>}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/admin/categories/${category.id}/edit`}
-                          className="p-1.5 text-slate-600 hover:text-amber-600 dark:text-slate-400 dark:hover:text-amber-400 transition-colors"
-                          title="Edit"
-                        >
-                          <RiEditLine className="w-4 h-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(category.id!)}
-                          className="p-1.5 text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition-colors"
-                          title="Delete"
-                        >
-                          <RiDeleteBinLine className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Data Table */}
+      <DataTable
+        columns={columns}
+        data={categories}
+        searchKey="name"
+        pageSize={10}
+      />
     </div>
   );
 }

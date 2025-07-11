@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authorsAPI } from '@/lib/api';
 import AuthorForm from '@/components/admin/AuthorForm';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 export default function NewAuthorPage() {
   const router = useRouter();
@@ -30,18 +32,19 @@ export default function NewAuthorPage() {
   return (
     <div>
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-2xl md:text-3xl font-bold">
           Create Author
         </h1>
-        <p className="mt-1 text-sm md:text-base text-slate-600 dark:text-slate-400">
+        <p className="mt-1 text-sm md:text-base text-muted-foreground">
           Add a new blog post author
         </p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-          <p className="text-red-600 dark:text-red-400">{error}</p>
-        </div>
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <AuthorForm
