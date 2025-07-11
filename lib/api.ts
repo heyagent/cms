@@ -145,6 +145,14 @@ export const changelogAPI = {
     });
   },
 
+  // Bulk delete entries
+  async bulkDelete(ids: number[]): Promise<{ message: string; deletedCount: number; deletedIds: number[] }> {
+    return fetchAPI<{ message: string; deletedCount: number; deletedIds: number[] }>('/api/v1/changelog/bulk', {
+      method: 'DELETE',
+      body: JSON.stringify({ ids }),
+    });
+  },
+
   // Update status
   async updateStatus(
     id: number,
@@ -233,6 +241,14 @@ export const blogAPI = {
     });
   },
 
+  // Bulk delete posts
+  async bulkDelete(ids: number[]): Promise<{ message: string; deletedCount: number; deletedIds: number[] }> {
+    return fetchAPI<{ message: string; deletedCount: number; deletedIds: number[] }>('/api/v1/blog/bulk', {
+      method: 'DELETE',
+      body: JSON.stringify({ ids }),
+    });
+  },
+
   // Get statistics
   async getStats(): Promise<ApiResponse<BlogStats>> {
     return fetchAPI<ApiResponse<BlogStats>>('/api/v1/blog/stats');
@@ -306,5 +322,39 @@ export const tagsAPI = {
   // Get all unique tags with counts
   async getList(): Promise<ApiResponse<Array<{ name: string; count: number }>>> {
     return fetchAPI<ApiResponse<Array<{ name: string; count: number }>>>('/api/v1/blog/tags');
+  },
+
+  // Get tag suggestions based on query
+  async getSuggestions(query: string, limit?: number): Promise<string[]> {
+    const params = new URLSearchParams({ q: query });
+    if (limit) params.set('limit', limit.toString());
+    
+    const response = await fetchAPI<ApiResponse<string[]>>(
+      `/api/v1/blog/tags/suggestions?${params.toString()}`
+    );
+    return response.data;
+  },
+
+  // Rename a tag across all posts
+  async rename(from: string, to: string): Promise<{ message: string; affected: number }> {
+    return fetchAPI<{ message: string; affected: number }>('/api/v1/blog/tags/rename', {
+      method: 'POST',
+      body: JSON.stringify({ from, to }),
+    });
+  },
+
+  // Merge multiple tags into one
+  async merge(tags: string[], into: string): Promise<{ message: string; affected: number }> {
+    return fetchAPI<{ message: string; affected: number }>('/api/v1/blog/tags/merge', {
+      method: 'POST',
+      body: JSON.stringify({ tags, into }),
+    });
+  },
+
+  // Delete a tag from all posts
+  async delete(slug: string): Promise<{ message: string; affected: number }> {
+    return fetchAPI<{ message: string; affected: number }>(`/api/v1/blog/tags/${slug}`, {
+      method: 'DELETE',
+    });
   },
 };

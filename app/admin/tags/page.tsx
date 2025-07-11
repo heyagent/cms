@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { tagsAPI } from '@/lib/api';
-import { Hash } from 'lucide-react';
+import { Hash, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DataTable, createSortableHeader } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,15 @@ import { AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import TagManagementModal from '@/components/admin/TagManagementModal';
 import type { ColumnDef } from '@tanstack/react-table';
 
 interface Tag {
@@ -25,6 +34,8 @@ export default function TagsListPage() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showManageModal, setShowManageModal] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<Tag | undefined>();
 
   useEffect(() => {
     fetchTags();
@@ -104,6 +115,41 @@ export default function TagsListPage() {
         );
       },
     },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const tag = row.original;
+        return (
+          <div className="flex items-center justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Tag Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedTag(tag);
+                    setShowManageModal(true);
+                  }}
+                >
+                  Manage Tag
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/admin/blog?tag=${encodeURIComponent(tag.name)}`}>
+                    View Posts
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
+    },
   ];
 
   if (loading) {
@@ -121,13 +167,25 @@ export default function TagsListPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold">
-          Tags
-        </h1>
-        <p className="mt-1 text-sm md:text-base text-muted-foreground">
-          All tags used in blog posts
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">
+            Tags
+          </h1>
+          <p className="mt-1 text-sm md:text-base text-muted-foreground">
+            All tags used in blog posts
+          </p>
+        </div>
+        <Button
+          onClick={() => {
+            setSelectedTag(undefined);
+            setShowManageModal(true);
+          }}
+          className="gap-2"
+        >
+          <Settings className="h-4 w-4" />
+          Manage Tags
+        </Button>
       </div>
 
       {error && (
@@ -151,6 +209,14 @@ export default function TagsListPage() {
           Total posts with tags: {totalPosts}
         </div>
       )}
+
+      {/* Tag Management Modal */}
+      <TagManagementModal
+        open={showManageModal}
+        onOpenChange={setShowManageModal}
+        selectedTag={selectedTag}
+        onSuccess={fetchTags}
+      />
     </div>
   );
 }

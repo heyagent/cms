@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { categoriesAPI, type BlogCategory } from '@/lib/api';
 import { Plus, Loader2, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DataTable, createSortableHeader } from '@/components/ui/data-table';
+import { DataTable, createSortableHeader, createSelectColumn } from '@/components/ui/data-table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +68,7 @@ export default function CategoryListPage() {
   };
 
   const columns: ColumnDef<BlogCategory>[] = [
+    createSelectColumn<BlogCategory>(),
     {
       accessorKey: "name",
       header: createSortableHeader("Name"),
@@ -188,6 +189,47 @@ export default function CategoryListPage() {
         data={categories}
         searchKey="name"
         pageSize={10}
+        onBulkDelete={async (selectedCategories) => {
+          if (!confirm(`Are you sure you want to delete ${selectedCategories.length} categories? This action cannot be undone.`)) {
+            return;
+          }
+          
+          try {
+            // For now, delete one by one until we have bulk API
+            let successCount = 0;
+            let errorCount = 0;
+            const errors: string[] = [];
+            
+            for (const category of selectedCategories) {
+              if (category.id) {
+                try {
+                  await categoriesAPI.delete(category.id);
+                  successCount++;
+                } catch (err) {
+                  errorCount++;
+                  if (err instanceof Error && err.message.includes('existing posts')) {
+                    errors.push(`${category.name} has existing posts`);
+                  }
+                }
+              }
+            }
+            
+            if (successCount > 0) {
+              toast.success(`Successfully deleted ${successCount} category(ies)`);
+            }
+            if (errorCount > 0) {
+              if (errors.length > 0) {
+                toast.error(`Failed to delete ${errorCount} category(ies): ${errors.join(', ')}`);
+              } else {
+                toast.error(`Failed to delete ${errorCount} category(ies)`);
+              }
+            }
+            
+            await fetchCategories(); // Refresh the list
+          } catch (err) {
+            toast.error('Failed to delete categories');
+          }
+        }}
       />
     </div>
   );

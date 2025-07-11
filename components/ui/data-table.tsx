@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -37,6 +37,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   searchKey?: string
   pageSize?: number
+  onBulkDelete?: (selectedRows: TData[]) => void
 }
 
 export function DataTable<TData, TValue>({
@@ -44,6 +45,7 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   pageSize = 10,
+  onBulkDelete,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -76,6 +78,28 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="w-full">
+      {/* Bulk Actions Bar */}
+      {table.getFilteredSelectedRowModel().rows.length > 0 && onBulkDelete && (
+        <div className="flex items-center gap-2 p-4 bg-muted rounded-lg mb-4">
+          <span className="text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} row(s) selected
+          </span>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => {
+              const selectedRows = table.getFilteredSelectedRowModel().rows.map(
+                (row) => row.original
+              )
+              onBulkDelete(selectedRows)
+              setRowSelection({})
+            }}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Selected
+          </Button>
+        </div>
+      )}
       <div className="flex items-center gap-4 py-4">
         {searchKey && (
           <Input
@@ -84,7 +108,7 @@ export function DataTable<TData, TValue>({
             onChange={(event) =>
               table.getColumn(searchKey)?.setFilterValue(event.target.value)
             }
-            className="max-w-sm"
+            className="max-w-sm focus:border-amber-400 focus:ring-amber-400/20"
           />
         )}
         <DropdownMenu>
@@ -240,3 +264,30 @@ export function DataTableRowActions<TData>({
 import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
+
+// Helper function to create checkbox column
+export function createSelectColumn<TData>(): ColumnDef<TData> {
+  return {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  }
+}

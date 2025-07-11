@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { blogAPI, type BlogPost } from '@/lib/api';
 import { Plus, Calendar, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DataTable, createSortableHeader } from '@/components/ui/data-table';
+import { DataTable, createSortableHeader, createSelectColumn } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -72,6 +72,7 @@ export default function BlogListPage() {
   };
 
   const columns: ColumnDef<BlogPost>[] = [
+    createSelectColumn<BlogPost>(),
     {
       accessorKey: "title",
       header: createSortableHeader("Title"),
@@ -229,6 +230,27 @@ export default function BlogListPage() {
         data={posts}
         searchKey="title"
         pageSize={10}
+        onBulkDelete={async (selectedPosts) => {
+          if (!confirm(`Are you sure you want to delete ${selectedPosts.length} blog posts?`)) {
+            return;
+          }
+          
+          try {
+            const ids = selectedPosts.map(post => post.id).filter((id): id is number => id !== undefined);
+            
+            if (ids.length === 0) {
+              toast.error('No valid posts selected');
+              return;
+            }
+            
+            const result = await blogAPI.bulkDelete(ids);
+            toast.success(result.message);
+            await fetchPosts(); // Refresh the list
+          } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to delete posts';
+            toast.error(message);
+          }
+        }}
       />
     </div>
   );

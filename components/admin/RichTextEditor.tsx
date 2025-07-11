@@ -275,7 +275,7 @@ export default function RichTextEditor({
       </div>
 
       {/* Editor */}
-      <div className="bg-white dark:bg-slate-900">
+      <div className="bg-white dark:bg-slate-900/50">
         <EditorContent editor={editor} />
       </div>
     </div>

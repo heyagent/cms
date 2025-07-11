@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { changelogAPI, type ChangelogEntry } from '@/lib/api';
 import { Plus, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DataTable, createSortableHeader } from '@/components/ui/data-table';
+import { DataTable, createSortableHeader, createSelectColumn } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -68,6 +68,7 @@ export default function ChangelogListPage() {
   };
 
   const columns: ColumnDef<ChangelogEntry>[] = [
+    createSelectColumn<ChangelogEntry>(),
     {
       accessorKey: "version",
       header: createSortableHeader("Version"),
@@ -215,6 +216,27 @@ export default function ChangelogListPage() {
         data={entries}
         searchKey="title"
         pageSize={10}
+        onBulkDelete={async (selectedEntries) => {
+          if (!confirm(`Are you sure you want to delete ${selectedEntries.length} changelog entries?`)) {
+            return;
+          }
+          
+          try {
+            const ids = selectedEntries.map(entry => entry.id).filter((id): id is number => id !== undefined);
+            
+            if (ids.length === 0) {
+              toast.error('No valid entries selected');
+              return;
+            }
+            
+            const result = await changelogAPI.bulkDelete(ids);
+            toast.success(result.message);
+            await fetchEntries(); // Refresh the list
+          } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to delete entries';
+            toast.error(message);
+          }
+        }}
       />
     </div>
   );

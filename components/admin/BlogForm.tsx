@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { blogSchema, type Blog } from '@/lib/schemas';
 import type { BlogPost, BlogAuthor, BlogCategory } from '@/lib/api';
@@ -26,10 +26,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, Loader2, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TagInput } from "@/components/ui/tag-input";
+import { tagsAPI } from "@/lib/api";
 import RichTextEditor from './RichTextEditor';
+import TagCloud from './TagCloud';
 
 interface BlogFormProps {
   initialData?: BlogPost;
@@ -59,14 +62,15 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
     },
   });
 
-  const {
-    fields: tagFields,
-    append: appendTag,
-    remove: removeTag,
-  } = useFieldArray({
-    control: form.control,
-    name: "tags",
-  });
+  // Function to get tag suggestions
+  const getTagSuggestions = async (query: string): Promise<string[]> => {
+    try {
+      return await tagsAPI.getSuggestions(query, 10);
+    } catch (error) {
+      console.error('Failed to fetch tag suggestions:', error);
+      return [];
+    }
+  };
 
   // Load authors and categories
   useEffect(() => {
@@ -333,58 +337,44 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
           )}
         />
 
-        {/* Tags Section */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <FormLabel>Tags</FormLabel>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => appendTag('')}
-              className="gap-1"
-            >
-              <Plus className="h-4 w-4" />
-              Add Tag
-            </Button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tags</FormLabel>
+                  <FormControl>
+                    <TagInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Type to search or add tags..."
+                      getSuggestions={getTagSuggestions}
+                      maxTags={10}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Add relevant tags to help categorize your blog post
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
-          
-          {tagFields.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">
-              No tags added yet
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {tagFields.map((field, index) => (
-                <div key={field.id} className="flex gap-2">
-                  <FormField
-                    control={form.control}
-                    name={`tags.${index}`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormControl>
-                          <Input 
-                            placeholder={`Tag ${index + 1}`}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeTag(index)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="lg:col-span-1">
+            <TagCloud
+              selectedTags={form.watch('tags')}
+              onTagClick={(tag) => {
+                const currentTags = form.getValues('tags');
+                if (!currentTags.includes(tag) && currentTags.length < 10) {
+                  form.setValue('tags', [...currentTags, tag]);
+                }
+              }}
+              maxTags={15}
+            />
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
