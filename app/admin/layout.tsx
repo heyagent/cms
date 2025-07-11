@@ -1,7 +1,7 @@
 "use client"
 
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { AdminSidebar } from "@/components/admin/new-sidebar"
+import { AdminSidebar } from "@/components/admin/Sidebar"
 import { Separator } from "@/components/ui/separator"
 import DarkModeToggle from "@/components/admin/DarkModeToggle"
 import {

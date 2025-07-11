@@ -19,7 +19,8 @@ import {
   User
 } from "lucide-react"
 import { useTheme } from "next-themes"
-import LogoCompact from "@/components/logo/LogoCompact"
+import LogoFull from "@/components/logo/LogoFull"
+import LogoIcon from "@/components/logo/LogoIcon"
 
 import {
   Sidebar,
@@ -282,6 +283,30 @@ function NavUser() {
   )
 }
 
+function SidebarLogo() {
+  const { state } = useSidebar()
+  const isCollapsed = state === "collapsed"
+  
+  if (isCollapsed) {
+    // Show only the icon when collapsed
+    return (
+      <LogoIcon 
+        size="md" 
+        variant="gradient"
+        className="mx-auto"
+      />
+    )
+  }
+  
+  // Show full logo when expanded - use auto variant to handle theme switching
+  return (
+    <LogoFull 
+      size="sm" 
+      variant="auto"
+    />
+  )
+}
+
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" variant="inset" {...props}>
@@ -290,7 +315,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/admin">
-                <LogoCompact size="md" />
+                <SidebarLogo />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
