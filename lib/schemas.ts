@@ -29,7 +29,7 @@ export type Category = z.infer<typeof categorySchema>;
 export const changelogSchema = z.object({
   version: z.string()
     .min(1, "Version is required")
-    .regex(/^v\d+\.\d+\.\d+$/, "Version must be in format v1.0.0"),
+    .regex(/^[\d,]+\.[\d,]+\.[\d,]+$/, "Version must be in format 1.0.0 (numbers and commas allowed)"),
   date: z.string().min(1, "Date is required"),
   title: z.string().min(1, "Title is required").max(200),
   summary: z.string().min(1, "Summary is required").max(500),

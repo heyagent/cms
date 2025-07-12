@@ -211,16 +211,25 @@ export function DataTable<TData, TValue>({
 }
 
 // Helper function to create sortable column headers
-export function createSortableHeader(label: string) {
+export function createSortableHeader(label: string, align: 'left' | 'center' | 'right' = 'left') {
   return ({ column }: any) => {
+    const alignmentClasses = {
+      left: '-ml-3',
+      center: '',
+      right: 'ml-auto -mr-3'
+    }
+    
     return (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        {label}
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
+      <div className={`flex ${align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start'}`}>
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className={alignmentClasses[align]}
+        >
+          {label}
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
     )
   }
 }

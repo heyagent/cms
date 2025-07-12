@@ -67,23 +67,20 @@ export default function TagsListPage() {
   const columns: ColumnDef<Tag>[] = [
     {
       accessorKey: "name",
-      header: createSortableHeader("Tag Name"),
+      header: createSortableHeader("Tag Name", "left"),
       cell: ({ row }) => {
         const tag = row.original;
         return (
-          <Link
-            href={`/admin/blog?tag=${encodeURIComponent(tag.name)}`}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-          >
-            <Hash className="w-4 h-4" />
+          <div className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+            <Hash className="w-4 h-4 text-muted-foreground" />
             {tag.name}
-          </Link>
+          </div>
         );
       },
     },
     {
       accessorKey: "count",
-      header: createSortableHeader("Post Count"),
+      header: createSortableHeader("Post Count", "right"),
       cell: ({ row }) => {
         const count = row.getValue("count") as number;
         return (
@@ -97,7 +94,7 @@ export default function TagsListPage() {
     },
     {
       id: "usage",
-      header: "Usage",
+      header: () => <div className="text-right">Usage</div>,
       cell: ({ row }) => {
         const tag = row.original;
         const percentage = totalPosts > 0 ? (tag.count / totalPosts) * 100 : 0;
@@ -117,7 +114,7 @@ export default function TagsListPage() {
     },
     {
       id: "actions",
-      header: "Actions",
+      header: () => <div className="text-right">Actions</div>,
       cell: ({ row }) => {
         const tag = row.original;
         return (
@@ -140,7 +137,7 @@ export default function TagsListPage() {
                   Manage Tag
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={`/admin/blog?tag=${encodeURIComponent(tag.name)}`}>
+                  <Link href={`/blog?tag=${encodeURIComponent(tag.name)}`}>
                     View Posts
                   </Link>
                 </DropdownMenuItem>

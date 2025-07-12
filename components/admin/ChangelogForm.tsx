@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Loader2, Plus, Trash2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface ChangelogFormProps {
   initialData?: ChangelogEntry;
@@ -101,11 +102,13 @@ export default function ChangelogForm({ initialData, onSubmit, loading = false }
               <FormItem>
                 <FormLabel>Version</FormLabel>
                 <FormControl>
-                  <Input placeholder="v1.0.0" {...field} />
+                  <Input placeholder="1.0.0" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Format: v1.0.0 (major.minor.patch)
-                </FormDescription>
+                <div className="min-h-[1.25rem]">
+                  <FormDescription className="text-xs">
+                    Format: 1.0.0 (major.minor.patch)
+                  </FormDescription>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -118,8 +121,12 @@ export default function ChangelogForm({ initialData, onSubmit, loading = false }
               <FormItem>
                 <FormLabel>Date</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <DatePicker
+                    date={field.value ? new Date(field.value) : undefined}
+                    setDate={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                  />
                 </FormControl>
+                <FormDescription className="text-xs">&nbsp;</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -154,7 +161,7 @@ export default function ChangelogForm({ initialData, onSubmit, loading = false }
                   {...field}
                 />
               </FormControl>
-              <FormDescription>
+              <FormDescription className="text-xs">
                 {field.value?.length || 0} / 500 characters
               </FormDescription>
               <FormMessage />

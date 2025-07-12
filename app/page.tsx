@@ -60,56 +60,64 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* Blog Posts Card */}
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Blog Posts</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? <Skeleton className="h-8 w-16" /> : stats.blog}
-            </div>
-          </CardContent>
-        </Card>
+        <Link href="/blog" className="block">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Blog Posts</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? <Skeleton className="h-8 w-16" /> : stats.blog}
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
 
         {/* Changelog Entries Card */}
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Changelog Entries</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? <Skeleton className="h-8 w-16" /> : stats.changelog}
-            </div>
-          </CardContent>
-        </Card>
+        <Link href="/changelog" className="block">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Changelog Entries</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? <Skeleton className="h-8 w-16" /> : stats.changelog}
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
 
         {/* Categories Card */}
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Categories</CardTitle>
-            <Folder className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? <Skeleton className="h-8 w-16" /> : stats.categories}
-            </div>
-          </CardContent>
-        </Card>
+        <Link href="/categories" className="block">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Categories</CardTitle>
+              <Folder className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? <Skeleton className="h-8 w-16" /> : stats.categories}
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
 
         {/* Tags Card */}
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tags</CardTitle>
-            <Tag className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? <Skeleton className="h-8 w-16" /> : stats.tags}
-            </div>
-          </CardContent>
-        </Card>
+        <Link href="/tags" className="block">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tags</CardTitle>
+              <Tag className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {loading ? <Skeleton className="h-8 w-16" /> : stats.tags}
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Recent Activity and Popular Tags Grid */}

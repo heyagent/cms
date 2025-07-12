@@ -33,6 +33,7 @@ import { TagInput } from "@/components/ui/tag-input";
 import { tagsAPI } from "@/lib/api";
 import RichTextEditor from './RichTextEditor';
 import TagCloud from './TagCloud';
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface BlogFormProps {
   initialData?: BlogPost;
@@ -198,7 +199,7 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
               <FormControl>
                 <Input placeholder="post-url-slug" {...field} />
               </FormControl>
-              <FormDescription>
+              <FormDescription className="text-xs">
                 URL-friendly version of the title (auto-generated if empty)
               </FormDescription>
               <FormMessage />
@@ -272,8 +273,12 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
               <FormItem>
                 <FormLabel>Date</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <DatePicker
+                    date={field.value ? new Date(field.value) : undefined}
+                    setDate={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                  />
                 </FormControl>
+                <FormDescription className="text-xs">&nbsp;</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -288,7 +293,7 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
                 <FormControl>
                   <Input {...field} readOnly />
                 </FormControl>
-                <FormDescription>
+                <FormDescription className="text-xs">
                   Automatically calculated from content
                 </FormDescription>
                 <FormMessage />
@@ -311,7 +316,7 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
                   {...field}
                 />
               </FormControl>
-              <FormDescription>
+              <FormDescription className="text-xs">
                 {field.value?.length || 0} / 500 characters
               </FormDescription>
               <FormMessage />
@@ -355,7 +360,7 @@ export default function BlogForm({ initialData, onSubmit, loading = false }: Blo
                       className="w-full"
                     />
                   </FormControl>
-                  <FormDescription>
+                  <FormDescription className="text-xs">
                     Add relevant tags to help categorize your blog post
                   </FormDescription>
                   <FormMessage />
